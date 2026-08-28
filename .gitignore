@@ -7,6 +7,6 @@ playwright-report/
 .DS_Store
 *.log
 .reflex-chrome-profile/
-reflex-extension-*.zip
+/reflex-extension-*.zip
 tools/dist/
-reflex-extension/
+/reflex-extension/

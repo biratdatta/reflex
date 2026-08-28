@@ -1,39 +1,70 @@
+<div align="center">
+
 # Reflex
 
-**Agentify the web you already use.**
+### Agentify the web you already use.
 
-Reflex is a Chrome extension that reads an existing website's forms, buttons and
-accessibility metadata, proposes WebMCP tools from what it finds, and — once a
-human approves them — registers those tools so an agent can drive the site
-through a structured interface instead of by clicking pixels.
+**A compatibility layer for the agentic web.** Reflex reads a website's forms, buttons and
+accessibility metadata, proposes WebMCP tools from what it finds, and — once a human approves them —
+registers those tools so an agent can drive the site through a structured interface instead of by
+clicking pixels.
 
-> Websites already describe much of their functionality through forms, semantic
-> HTML and accessibility metadata. Reflex turns those existing semantics into
-> candidate WebMCP tools, lets people review them, and exposes approved
-> capabilities to agents.
+[![License: MIT](https://img.shields.io/badge/License-MIT-6ee7b7?style=flat-square)](LICENSE)
+[![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](apps/extension/public/manifest.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.base.json)
+[![Tests](https://img.shields.io/badge/tests-153%20unit%20%2B%2016%20e2e-6ee7b7?style=flat-square)](#testing)
+[![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
-Reflex is not a replacement for a WebMCP implementation written by a site's own
-developers. It is a migration path for the applications that already exist.
+[**Download the extension**](release/reflex-extension-0.1.0.zip) ·
+[Quick start](#quick-start) ·
+[How it works](#how-it-works) ·
+[On real websites](#on-real-websites) ·
+[Safety](#safety-and-privacy)
+
+<img src="docs/screenshots/demo-tool-call.png" alt="An agent calling a Reflex-generated tool on a legacy HR application; the page's own UI updates in response" width="880">
+
+</div>
 
 ---
 
-## What it does
+## The idea
 
-```
-Existing website
-       ↓  DOM + ARIA + semantic HTML
-Capability discovery
-       ↓  tool name, description, JSON Schema
-Confidence + risk analysis
-       ↓
-Human review            ← nothing is registered without this
-       ↓
-WebMCP registration
-       ↓
-Agent
+Most websites were built before WebMCP existed. Adapting each one by hand means a developer
+identifying capabilities, naming tools, writing descriptions, authoring JSON Schemas, implementing
+handlers and maintaining registrations — which is exactly the adoption barrier that keeps agents
+stuck driving user interfaces visually: fragile, slow, and ambiguous.
+
+But those websites are not silent about what they do. They already describe much of their
+functionality — through forms, semantic HTML and the accessibility metadata they were required to
+add anyway.
+
+> **Reflex treats accessibility metadata as evidence for a capability contract.**
+> Existing websites contain enough semantic information to bootstrap an agent interface. Reflex
+> turns that implicit interface into an explicit WebMCP one.
+
+```mermaid
+flowchart TD
+    A["Existing website"] --> B["DOM + ARIA + semantic HTML"]
+    B --> C["Capability discovery<br/><i>forms, buttons, labels, roles</i>"]
+    C --> D["Tool generation<br/><i>name · description · JSON Schema</i>"]
+    D --> E["Confidence + risk analysis"]
+    E --> F["Human review"]
+    F -->|approved| G["WebMCP registration"]
+    F -->|rejected| H["Nothing registered"]
+    G --> I["Agent operates the existing app"]
+
+    style F fill:#fff6e5,stroke:#b58105,stroke-width:2px,color:#1c2430
+    style H fill:#f7f7f7,stroke:#999,color:#555
+    style G fill:#e6f7ef,stroke:#1f6f4f,stroke-width:2px,color:#1c2430
+    style I fill:#e8f0fb,stroke:#1f4e8c,stroke-width:2px,color:#1c2430
 ```
 
-A form like this:
+Human review is not a setting to switch off. It is the product: generated tools can be wrong, and
+the person approving one gets to see exactly which markup produced it.
+
+### What that looks like
+
+A form the site already had:
 
 ```html
 <form aria-label="Search employees" aria-description="Find an employee by name or email">
@@ -43,7 +74,7 @@ A form like this:
 </form>
 ```
 
-becomes this, with the ARIA attributes recorded as the evidence for each part:
+The tool Reflex proposes from it:
 
 ```json
 {
@@ -61,77 +92,315 @@ becomes this, with the ARIA attributes recorded as the evidence for each part:
 }
 ```
 
-Calling the tool sets the field, dispatches `input`/`change`, calls
-`form.requestSubmit()`, and returns the text of the region the form updates — so
-a read-only tool returns data, not just "submitted".
+Calling it sets the field, dispatches `input` and `change`, calls `form.requestSubmit()`, and returns
+the text of the region the form updates — so a read-only tool returns **data**, not just
+"submitted".
 
 ---
 
-## Try it in five minutes
+## Quick start
+
+### 1. Install the extension
+
+**Download:** [`release/reflex-extension-0.1.0.zip`](release/reflex-extension-0.1.0.zip) (69 KB)
+
+Unzip it, then:
+
+1. Open `chrome://extensions`
+2. Turn on **Developer mode** (top right)
+3. Click **Load unpacked** and select the unzipped **`reflex-extension`** folder
+4. Pin Reflex to the toolbar (puzzle-piece icon → pin)
+
+<details>
+<summary><b>Or build it from source</b></summary>
 
 ```bash
 npm install
-npm run build:extension     # → apps/extension/dist
+npm run build:extension     # → apps/extension/dist  (load this folder unpacked)
+npm run package             # → release/reflex-extension-<version>.zip
+```
+
+</details>
+
+### 2. Run the demo application
+
+```bash
 npm run dev:demo            # → http://localhost:3000/employees
 ```
 
-Then load the extension:
+**ACME Employee Manager** is a fictional legacy HR app included in this repo. It uses nothing but
+standard HTML and good accessibility metadata — no Reflex-specific hooks — and it deliberately
+includes decoys ("Toggle navigation menu", "Next page", "Collapse this section") that must *not*
+become tools.
 
-1. Open `chrome://extensions`
-2. Turn on **Developer mode**
-3. **Load unpacked** → select `apps/extension/dist`
-4. Open <http://localhost:3000/employees> and click the Reflex toolbar button
+<img src="docs/screenshots/demo-app.png" alt="The ACME Employee Manager demo application" width="820">
 
-You should see an **Agent readiness** score and five discovered capabilities.
-Click one to inspect its evidence, schema and risk, then **Enable tool**. The
-badge on the toolbar button counts active tools, and a small **REFLEX TOOLS**
-panel appears in the page.
+### 3. Discover, review, approve
 
-That panel is a stand-in for a WebMCP client: no shipping browser exposes WebMCP
-yet, so it lists exactly what Reflex registered and lets you call it with JSON
-arguments. Try `search_employees` with `{"query": "Sarah Chen"}` and watch the
-application's own UI respond.
+Open the app and click the Reflex button.
 
-### The demo walkthrough
+<table>
+<tr>
+<td width="33%" valign="top">
+<img src="docs/screenshots/popup-capabilities.png" alt="Reflex popup listing discovered capabilities grouped by risk">
+<b>Discover</b><br/>
+An agent-readiness score, and every capability found on the page, grouped read → write → sensitive →
+destructive. Destructive ones are marked 🔒.
+</td>
+<td width="33%" valign="top">
+<img src="docs/screenshots/popup-inspector.png" alt="The Reflex inspector showing a generated tool with its evidence and schema">
+<b>Inspect</b><br/>
+The generated name, description, schema and — crucially — the <b>evidence</b>: the exact ARIA
+attributes, form and field labels that produced it. Correct anything that reads wrong.
+</td>
+<td width="33%" valign="top">
+<img src="docs/screenshots/popup-active.png" alt="Reflex popup showing two active tools">
+<b>Agentify</b><br/>
+Approve, and the tool is registered with the page's WebMCP host. The toolbar badge counts what is
+live.
+</td>
+</tr>
+</table>
 
-On <http://localhost:3000/employees/E-482> (Sarah Chen):
+### 4. Let an agent use it
 
-| Capability | Risk | What it does |
+A **REFLEX TOOLS** panel appears in the page. It stands in for a WebMCP client — no shipping browser
+exposes WebMCP yet — listing exactly what was registered and calling it with JSON arguments. Or drive
+it from the page's DevTools console, the way a real client would:
+
+```js
+navigator.modelContext.listTools().map((tool) => tool.name);
+// → ['search_employees', 'change_department']
+
+await navigator.modelContext.callTool('search_employees', { query: 'Sarah Chen' });
+// → { success: true, observed: { region: 'Sarah Chen  E-482  sarah.chen@acme.test  Engineering …' } }
+```
+
+---
+
+## The demo walkthrough
+
+On [`/employees/E-482`](http://localhost:3000/employees/E-482) (Sarah Chen), Reflex finds seven
+capabilities across all four risk levels:
+
+| Capability | Risk | Behaviour |
 | --- | --- | --- |
-| `list_employee_applications` | read | Lists what she can access |
-| `change_department` | write | Moves her to another department |
-| `assign_application` | write | Grants an application |
-| `revoke_application_access` | destructive | Removes one — asks you first |
-| `reset_password` | sensitive | Emails a reset link |
-| `deactivate_employee` | destructive | Blocks sign-in |
+| `list_employee_applications` | `read` | Lists what she can access, and returns the table's contents |
+| `change_department` | `write` | Moves her to another department — enum of real options |
+| `assign_application` | `sensitive` | Grants an application (its description mentions *access*) |
+| `reset_password` | `sensitive` | Emails a reset link |
+| `revoke_application_access` | `destructive` | Removes access — **asks you first, in the page** |
+| `deactivate_employee` | `destructive` | Blocks sign-in — **asks you first, in the page** |
+| `set_temporary_password` | `sensitive` | Schema is **empty**: its only field is a password input |
 
-Enable `list_employee_applications` and `change_department`, then move Sarah to
-Finance through the tool. The page updates as if a person had done it, because a
-person's interface is exactly what was driven.
+Three things worth trying:
 
-### On real websites
+1. **Enable `change_department`** and call it with `{"department": "finance"}`. The record, the status
+   banner and the department all update — because the app's own form was driven, not bypassed.
+2. **Enable `revoke_application_access`** and call it. Chrome asks for approval *in the page*.
+   Dismiss it and nothing happens; accept and AWS access is gone.
+3. **Break the fingerprint.** With `change_department` enabled, run this in the page console and call
+   the tool again:
 
-Reflex works on production sites, not only the demo. Measured with
-`npm run scan -- <url>`:
+   ```js
+   document.getElementById('change-department').setAttribute('aria-label', 'Terminate employment');
+   ```
+
+   It refuses: `accessible name changed from "Change department" to "Terminate employment"`. The
+   selector still matched. The meaning didn't.
+
+---
+
+## On real websites
+
+Reflex is not demo-ware. Measured with `npm run scan -- <url>`, which runs the real discovery engine
+against a live page:
 
 | Site | Readiness | Discovered |
 | --- | --- | --- |
-| [GOV.UK search](https://www.gov.uk/search/all) | 95% | `site_wide(keywords)`, plus a 10-parameter filter form |
-| [NHS pharmacy finder](https://www.nhs.uk/service-search/pharmacy/find-a-pharmacy) | 90% | `find_a_pharmacy(Location)` |
-| [Companies House](https://find-and-update.company-information.service.gov.uk/) | 89% | `search_the_register(q)` |
+| [GOV.UK search](https://www.gov.uk/search/all) | **95%** | `site_wide(keywords)` + a **10-parameter** filter form |
+| [NHS pharmacy finder](https://www.nhs.uk/service-search/pharmacy/find-a-pharmacy) | **90%** | `find_a_pharmacy(Location)` |
+| [Companies House](https://find-and-update.company-information.service.gov.uk/) | **89%** | `search_the_register(q)` |
 | [Wikipedia](https://en.wikipedia.org/wiki/Main_Page) | 82% | `searchform(search)` — named from an `id`, so worth renaming |
-| [GitHub advanced search](https://github.com/search/advanced) | 72% | `search_form(…)` with **25** parameters |
+| [GitHub advanced search](https://github.com/search/advanced) | 72% | one form → **25 parameters** (`search_stars`, `search_license`, `search_author`, …) |
 | [Hacker News](https://news.ycombinator.com/) | 50% | nothing — forms without accessible names |
 | [OrangeHRM demo](https://opensource-demo.orangehrmlive.com/) | 39% | nothing — placeholder-only labels |
 
-All three of the top sites were verified end to end: approve the tool, call it
-through `navigator.modelContext`, and the site performs the real search. Their
-Content-Security-Policy is no obstacle — the extension injects through Chrome's
-privileged path rather than a script tag.
+The top three were verified end to end: approve the tool, call it through `navigator.modelContext`,
+and the site performs the real search. Their Content-Security-Policy is no obstacle, because Chrome
+injects the runtime through a privileged path rather than a `<script>` tag.
 
-The lower scores are the honest half of the story, and they are what the
-readiness breakdown is for: it tells you *which* signal is missing (accessible
-names, form quality) rather than just that a page did not work.
+The low scores are the honest half of the story, and they are what the readiness breakdown is for: it
+names *which* signal is missing — accessible names, form quality — instead of just reporting that a
+page did not work.
+
+```bash
+npm run scan -- https://www.gov.uk/search/all          # read-only: discovers, never calls
+npm run scan -- --threshold 40 --json https://example.com
+```
+
+---
+
+## How it works
+
+### Two JavaScript worlds
+
+A Chrome content script cannot reach the page's own JavaScript, and `navigator.modelContext` lives
+there. So Reflex is split, with a strict message protocol between the halves:
+
+```mermaid
+flowchart LR
+    subgraph EXT["Chrome extension"]
+        P["Popup (React)<br/><i>review · approve · settings</i>"]
+        SW["Service worker<br/><i>badge only</i>"]
+    end
+    subgraph ISO["Content script · isolated world"]
+        D["Discovery engine"]
+        S["chrome.storage.local<br/><i>approvals, per origin</i>"]
+        M["MutationObserver<br/><i>debounced rescan</i>"]
+    end
+    subgraph PAGE["Page runtime · page's own world"]
+        A["WebMCP adapter"]
+        X["DOM executor"]
+        C["Tool console"]
+    end
+
+    P <-->|chrome.runtime| D
+    D --> S
+    M --> D
+    D <-->|"window.postMessage<br/>channel: reflex/v1"| A
+    A --> MC["navigator.modelContext"]
+    A --> X
+    X --> DOM["The page's own forms<br/>and buttons"]
+    MC <--> AG["Agent"]
+
+    style PAGE fill:#f4f8fd,stroke:#1f4e8c,color:#1c2430
+    style ISO fill:#f7f7f9,stroke:#5a6673,color:#1c2430
+    style EXT fill:#f3f1fa,stroke:#5b4b9c,color:#1c2430
+```
+
+The content script decides **what exists** and holds the user's decisions. The page runtime decides
+**nothing** — it registers what it is told to and executes it. Neither half can do the other's job,
+which is what keeps `modelContext` access out of the extension and DOM policy out of the page.
+
+### From approval to actuation
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as You
+    participant Pop as Popup
+    participant CS as Content script
+    participant PR as Page runtime
+    participant Host as WebMCP host
+    participant Ag as Agent
+    participant Web as The website
+
+    U->>Pop: Open Reflex
+    Pop->>CS: inject + REQUEST_SNAPSHOT
+    CS->>CS: scan DOM → candidates + evidence
+    CS-->>Pop: capabilities, confidence, risk
+    U->>Pop: review evidence, edit, Enable
+    Pop->>CS: APPROVE_CANDIDATE
+    CS->>PR: REGISTER_TOOL
+    PR->>Host: registerTool(name, schema, execute)
+
+    Ag->>Host: callTool("change_department", {...})
+    Host->>PR: execute(args)
+    PR->>PR: re-verify semantic fingerprint
+    alt fingerprint matches
+        PR->>Web: set fields, dispatch events, requestSubmit()
+        Web-->>PR: page updates
+        PR-->>Ag: success + text of the result region
+    else element changed or vanished
+        PR-->>Ag: error — nothing actuated
+    end
+```
+
+### What gets read, and what it becomes
+
+| Signal in the page | What Reflex derives |
+| --- | --- |
+| `aria-label`, `aria-labelledby` | tool name and title |
+| `aria-description`, `aria-describedby` | tool description |
+| `<label for>`, wrapping `<label>` | parameter descriptions |
+| `<legend>`, adjacent headings | fallback names for forms |
+| `type`, `required`, `min`/`max`, `pattern`, `<option>` | JSON Schema, enums, constraints |
+| `aria-controls`, live regions, `role="status"` | what the tool returns to the agent |
+| the verbs in those labels | risk classification |
+
+Names resolve in a fixed priority — `aria-label` → `aria-labelledby` → heading/legend → visible text
+→ `name` → `id` — and **every candidate carries the evidence that produced it**, so a reviewer can
+see why Reflex proposed something instead of taking its word.
+
+Generic interface mechanics never become tools. "Close", "Toggle sidebar", "Next page", "Move tools
+to sidebar" are dropped by rules calibrated against real pages — an agent should invoke a business
+capability, not operate incidental UI.
+
+<details>
+<summary><b>HTML → JSON Schema mapping</b></summary>
+
+| HTML | JSON Schema |
+| --- | --- |
+| `text`, `search`, `tel`, `<textarea>` | `string` (+ `minLength`, `maxLength`, `pattern`) |
+| `email` | `string`, `format: email` |
+| `url` | `string`, `format: uri` |
+| `number`, `range` | `number` (+ `minimum`, `maximum`); `integer` when `step` is whole |
+| `date` / `time` / `datetime-local` | `string` + `format: date` / `time` / no format |
+| `checkbox` (single) | `boolean` |
+| `checkbox` (shared name) | `array` of `enum` |
+| `radio` group | `string` with `enum` of the group's values |
+| `<select>` | `string` with `enum`; `array` when `multiple` |
+| `required` | added to the schema's `required` list |
+| `password` | **never exposed**; escalates the tool's risk to `sensitive` |
+| `hidden`, `file`, `submit`, `disabled`, unnamed | skipped — no agent-settable value |
+
+</details>
+
+### Confidence
+
+An additive heuristic over the signals above, capped at 100:
+
+| Signal | Points |
+| --- | --- |
+| `aria-label` present | +30 |
+| `aria-description` present | +20 |
+| every field has an authored label | +15 |
+| a real `<form>` element | +15 |
+| every field has a `name` | +10 |
+| explicit button text | +10 |
+| field-level help text | +10 |
+| declares fields but exposes none | −20 |
+
+`90–100` high · `75–89` review recommended · `50–74` low · **below 50 is not shown at all**
+(adjustable in settings).
+
+### Risk
+
+Keyword rules, checked most-dangerous-first, so "Search and revoke access" is `destructive` rather
+than `read`. Unknown verbs default to `write`.
+
+| Level | Sample keywords | Consequence |
+| --- | --- | --- |
+| `read` | search, find, view, list, filter, get | the only level eligible for bulk approval |
+| `write` | create, add, update, change, assign, import | individual approval |
+| `sensitive` | password, role, permission, access, billing, approve, send | individual approval |
+| `destructive` | delete, remove, revoke, deactivate, terminate, archive | individual approval **and** a confirmation in the page on every call |
+
+Risk is advisory and editable in the inspector — the keyword that decided it is shown, so a
+misclassification is visible rather than mysterious.
+
+### Failing closed
+
+Every candidate stores a stable selector **and** a semantic fingerprint: tag, role, accessible name,
+and the field names it expects. Before actuating anything, Reflex re-locates the element and
+re-checks that fingerprint. A form that lost a field, or a button whose accessible name changed,
+produces an error — never a click on whatever now occupies that selector.
+
+Values are set through native property setters followed by `input` and `change` events, so
+frameworks notice the change; submission prefers `form.requestSubmit()` so the page's own validation
+and handlers run. On multi-page apps, execution detects the page starting to navigate and returns
+promptly with `observed.navigating: true` instead of waiting for a result it could never read.
 
 ---
 
@@ -140,174 +409,131 @@ names, form quality) rather than just that a page did not work.
 ```
 reflex/
 ├── apps/
-│   ├── extension/          Chrome extension (Manifest V3)
-│   └── demo-legacy-app/    ACME Employee Manager — the fictional legacy app
+│   ├── extension/              Chrome extension (Manifest V3)
+│   │   └── src/
+│   │       ├── content/        discovery, decisions, storage, the bridge
+│   │       ├── page/           WebMCP registration, DOM execution, tool console
+│   │       ├── popup/          React review UI
+│   │       ├── background/     badge only
+│   │       └── shared/         messaging, storage, settings
+│   └── demo-legacy-app/        ACME Employee Manager
 ├── packages/
-│   ├── capability-model/   CapabilityCandidate, schema and message types
-│   ├── discovery-engine/   scanners, ARIA/label resolution, risk, confidence
-│   ├── schema-generator/   HTML form controls → JSON Schema
-│   └── webmcp-adapter/     the only code that touches modelContext, + executor
+│   ├── capability-model/       CapabilityCandidate, schema + message types
+│   ├── discovery-engine/       scanners, ARIA/labels, naming, risk, confidence,
+│   │                           selectors + fingerprints, readiness
+│   ├── schema-generator/       HTML form controls → JSON Schema
+│   └── webmcp-adapter/         the only code touching modelContext, + executor
+├── tools/
+│   ├── scan-site.mjs           run the engine against any live URL (read-only)
+│   └── package-extension.mjs   build the loadable zip
+├── release/                    the packaged extension
+├── docs/screenshots/
 └── tests/
-    ├── unit/               Vitest (jsdom)
-    └── e2e/                Playwright, against the real built extension
+    ├── unit/                   Vitest (jsdom)
+    └── e2e/                    Playwright, against the real built extension
 ```
 
-The discovery engine has no extension dependencies, so it can be reused outside
-Reflex.
+The discovery engine has no extension dependencies, so it can be reused outside Reflex — which is
+what `npm run scan` does.
 
 ### Commands
 
 | Command | What it does |
 | --- | --- |
-| `npm run build:extension` | Build the extension into `apps/extension/dist` |
+| `npm run build:extension` | Build into `apps/extension/dist` (load this unpacked) |
+| `npm run package` | Build and zip into `release/` |
 | `npm run dev:demo` | Serve the demo app on port 3000 |
-| `npm test` | Unit tests (jsdom) |
-| `npm run test:e2e` | End-to-end tests in real Chrome |
+| `npm run scan -- <url>` | Point the discovery engine at any live page |
+| `npm test` | 153 unit tests (jsdom) |
+| `npm run test:e2e` | 16 end-to-end tests in a real browser |
 | `npm run typecheck` | Typecheck every workspace |
-| `npm run scan -- <url>` | Point the discovery engine at any live page and print what it finds |
-
----
-
-## How it is put together
-
-### Two worlds
-
-A Chrome content script cannot reach the page's own JavaScript, and
-`navigator.modelContext` lives there. So Reflex is split:
-
-```
-Content script (isolated world)        Page runtime (page world)
-  DOM discovery                          WebMCP registration
-  user decisions + storage      ⇄        tool execution
-  mutation observer                      the tool console
-                            window.postMessage
-```
-
-Everything crossing between them is a typed message on the `reflex/v1` channel.
-The content script never touches WebMCP; the page runtime never decides
-anything.
-
-### Discovery
-
-| Signal | Used for |
-| --- | --- |
-| `aria-label`, `aria-labelledby` | tool name and title |
-| `aria-description`, `aria-describedby` | tool description |
-| `<label for>`, wrapping `<label>` | parameter descriptions |
-| `type`, `required`, `min`/`max`, `pattern`, `<option>` | JSON Schema |
-| `aria-controls`, live regions | what the tool returns |
-| verb keywords | risk classification |
-
-Names resolve in priority order (`aria-label` → `aria-labelledby` →
-heading/legend → visible text → `name` → `id`), and every candidate carries the
-evidence that produced it, so a reviewer can see *why* Reflex proposed
-something rather than taking its word.
-
-Generic interface mechanics are dropped: "Close", "Toggle sidebar", "Next page"
-and friends never become tools. An agent should invoke a business capability,
-not operate incidental UI.
-
-### Confidence and risk
-
-Confidence is an additive heuristic over those signals, capped at 100:
-`aria-label` +30, `aria-description` +20, labelled fields +15, semantic form
-+15, named inputs +10, explicit button text +10, field help text +10, and −20 if
-a form declares fields but exposes none. Below 50 a candidate is not shown at
-all.
-
-Risk is keyword-based and checked most-dangerous-first, so "Search and revoke
-access" is destructive, not read. Unknown verbs default to `write`. Risk is
-advisory — you can correct it in the inspector before enabling a tool — but
-`destructive` and `sensitive` are never enabled in bulk.
-
-### Execution, and failing closed
-
-Every candidate stores a selector *and* a semantic fingerprint (tag, role,
-accessible name, expected field names). Before actuating anything, Reflex
-re-locates the element and re-checks the fingerprint. If the form lost a field,
-or the button's accessible name changed, execution stops with an error instead
-of clicking whatever now sits at that selector.
-
-Values are set through the native property setters and followed by `input` and
-`change` events, so frameworks notice; submission prefers
-`form.requestSubmit()`.
 
 ---
 
 ## Safety and privacy
 
-- **Nothing registers itself.** Every tool needs an explicit human approval.
-- **Approvals are scoped by origin** and stored in `chrome.storage.local`. A
-  tool approved on one site never appears on another — including the same app
-  served from a different host.
-- **Destructive calls ask again, in the page,** every time an agent invokes them.
-- **Password fields are never exposed.** A form containing one has that field
-  omitted from the schema and its risk escalated to `sensitive`.
-- **Discovery is local.** No page content, DOM, form values or account data
-  leaves the browser. Reflex has no backend, and the MVP uses no model at all —
-  discovery is deterministic rules over markup.
-- **Minimal permissions:** `activeTab`, `scripting`, `storage`. No host
-  permissions: Reflex only reads a page when you open it there.
+- **Nothing registers itself.** Every tool requires an explicit human approval. "Enable read-only
+  tools" is the only bulk action, and it touches nothing above `read`.
+- **Approvals are scoped by origin**, in `chrome.storage.local`. A tool approved on one site never
+  appears on another — including the same application served from a different host.
+- **Destructive calls ask again, in the page,** every single time an agent invokes them.
+- **Password fields are never exposed.** A form containing one has that field omitted from the schema
+  and its risk escalated to `sensitive`.
+- **Targets are re-verified before execution**, and execution fails closed when the element's meaning
+  has changed.
+- **Discovery is local.** No page content, DOM, form values or account data leaves the browser.
+  Reflex has no backend, and the MVP uses no model at all — discovery is deterministic rules over
+  markup.
+- **Minimal permissions:** `activeTab`, `scripting`, `storage`. No host permissions, so Reflex reads
+  a page only when you open it there.
+- **One switch off.** Disabling Reflex for a site withdraws every registered tool immediately.
 
 ---
 
 ## WebMCP hosts
 
-WebMCP is experimental and not in stable Chrome. `packages/webmcp-adapter` is
-the only place that knows this: it probes `navigator.modelContext` then
-`document.modelContext`, supports both `registerTool` and `provideContext`
-styles, and — when the browser offers nothing — installs a local host marked
-`__reflexShim: true` so approved tools are still real and callable. The popup
-says plainly which of those is in play.
+WebMCP is experimental and not in stable Chrome. `packages/webmcp-adapter` is the only place that
+knows this:
 
-When a browser ships a native host, the adapter uses it and nothing else in the
-codebase changes.
+1. probe `navigator.modelContext`, then `document.modelContext`
+2. support both `registerTool` and `provideContext` host styles
+3. failing both, install a **local host marked `__reflexShim: true`** so approved tools are still real
+   and callable
 
----
-
-## Limits
-
-Reflex discovers agent capabilities in *compatible* web applications. It does
-not work on every website, and accessibility metadata is not the same thing as
-a WebMCP contract — it is evidence for one. Generated tools can be wrong, which
-is why human review is part of the product rather than a setting.
-
-**Multi-page applications.** When a tool submits a form that navigates the
-page, execution returns promptly with `observed.navigating: true` rather than
-waiting for a result it can never read — but the old document takes its
-registered tools with it. Because Reflex holds no host permissions, the new page
-starts blank until you open Reflex on it again. Single-page applications keep
-their tools across in-app navigation.
-
-Out of scope in this MVP: network/API inference, OpenAPI or GraphQL discovery,
-framework state reverse-engineering, multi-page workflow recording, canvas
-applications, cross-origin iframes, and sites with deliberate anti-automation
-controls.
+The popup always states which of those is in play. When a browser ships a native host, the adapter
+uses it and nothing else in the codebase changes.
 
 ---
 
-## Tests
+## Testing
 
 ```bash
-npm test          # 149 unit tests (jsdom): naming, ARIA, labels, schema, risk,
-                  # ignore rules, selectors, fingerprints, scanners, adapter,
-                  # execution, plus discovery against the demo app's own markup
+npm test          # 153 unit tests (jsdom)
 npm run test:e2e  # 16 tests in a real browser, against the built extension
 ```
 
-The e2e suite needs Playwright's Chromium once:
+Unit tests cover naming, ARIA and label resolution, the full HTML → JSON Schema mapping, ignore rules
+(including real labels harvested from live sites), risk classification, selector and fingerprint
+generation, the adapter against three host styles, DOM execution — and discovery run over the demo
+app's **own rendered markup**, so a regression in the demo's accessibility is a test failure.
+
+End-to-end tests need Playwright's Chromium once:
 
 ```bash
 npx playwright install chromium
 ```
 
-Stable Chrome no longer honours `--load-extension`, so these tests use
-Chromium. (`REFLEX_E2E_EXECUTABLE=/path/to/Chromium` points them at a build you
-already have.)
+Stable Chrome no longer honours `--load-extension`, so the suite uses Chromium
+(`REFLEX_E2E_EXECUTABLE=/path/to/Chromium` points it at a build you already have). It stages the
+built extension with one change — a host permission for `localhost:3000`, standing in for the click
+that would otherwise grant `activeTab` — then injects Reflex exactly as the popup does, drives the
+real popup UI, and calls the registered tools the way a WebMCP client would.
 
-They stage a copy of the built extension with one change — a host permission for
-`localhost:3000`, standing in for the click that would otherwise grant
-`activeTab` — then inject Reflex exactly as the popup does, approve capabilities
-through the real message protocol, drive the real popup UI, and call the
-registered tools the way a WebMCP client would: `navigator.modelContext
-.callTool('change_department', { department: 'finance' })`.
+---
+
+## Limits, honestly
+
+Reflex discovers agent capabilities in **compatible** web applications. It does not work on every
+website, and accessibility metadata is not the same thing as a WebMCP contract — it is *evidence* for
+one. Generated tools can be wrong, which is why human review is part of the product rather than a
+setting.
+
+**Multi-page applications.** When a tool submits a form that navigates the page, the old document
+takes its registered tools with it. Because Reflex holds no host permissions, the new page starts
+blank until you open Reflex on it again. Single-page applications keep their tools across in-app
+navigation.
+
+**Out of scope in this MVP:** network/API inference, OpenAPI or GraphQL discovery, framework state
+reverse-engineering, multi-page workflow recording, canvas applications, cross-origin iframes, and
+sites with deliberate anti-automation controls.
+
+**Possible next steps:** teach mode (record a workflow, propose a higher-level capability),
+network correlation (observe the `POST` behind a click and execute against it instead of the DOM), a
+capability graph that lifts UI operations into domain capabilities, and optional LLM assistance for
+naming ambiguous candidates — suggesting metadata only, never controlling execution.
+
+---
+
+## License
+
+[MIT](LICENSE) © 2026 Birat Datta

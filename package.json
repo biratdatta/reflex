@@ -13,6 +13,7 @@
     "build": "npm run build -w @reflex/extension && npm run build -w @reflex/demo-legacy-app",
     "build:extension": "npm run build -w @reflex/extension",
     "build:demo": "npm run build -w @reflex/demo-legacy-app",
+    "package": "npm run build:extension && node tools/package-extension.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -30,5 +31,11 @@
     "typescript": "^5.6.2",
     "vite": "^5.4.8",
     "vitest": "^2.1.2"
+  },
+  "license": "MIT",
+  "author": "Birat Datta",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/biratdatta/reflex.git"
   }
 }
