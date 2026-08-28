@@ -77,10 +77,10 @@ const IGNORED_PHRASES = new Set([
 
 /** Verbs that, applied to a UI noun, describe interface mechanics only. */
 const UI_VERB =
-  /^(close|open|toggle|expand|collapse|dismiss|hide|show|focus|scroll|switch|move|pin|unpin|dock|undock|minimise|minimize|maximise|maximize|resize|drag)\b/;
+  /^(close|open|toggle|expand|collapse|dismiss|hide|show|focus|scroll|switch|move|pin|unpin|dock|undock|minimise|minimize|maximise|maximize|resize|drag|print|share)\b/;
 
 const UI_NOUN =
-  /\b(?:menu|modal|dialog|drawer|panel|popover|popup|tooltip|accordion|sidebar|side bar|navigation|nav|tab|section|row|column|dropdown|overlay|banner|notification|toast|alert|snackbar|carousel|slide|lightbox|sheet|flyout|hamburger|theme|appearance|layout|toolbar|widget|window|preview|dark mode|light mode|font size|text size|table of contents|toc|breadcrumb|pagination|filter panel)s?\b/;
+  /\b(?:menu|modal|dialog|drawer|panel|popover|popup|tooltip|accordion|sidebar|side bar|navigation|nav|tab|section|row|column|dropdown|overlay|banner|notification|toast|alert|snackbar|carousel|slide|lightbox|sheet|flyout|hamburger|theme|appearance|layout|toolbar|widget|window|preview|dark mode|light mode|font size|text size|table of contents|toc|breadcrumb|pagination|filter panel|page|screen|list view|results list)s?\b/;
 
 export interface IgnoreVerdict {
   ignored: boolean;

@@ -36,7 +36,41 @@ describe('classifyRisk', () => {
   });
 
   it('defaults unknown labels to write, flagged as unclassified', () => {
-    expect(classifyRisk('Frobnicate widget')).toEqual({ risk: 'write', classified: false });
+    expect(classifyRisk('Frobnicate widget')).toMatchObject({ risk: 'write', classified: false });
+  });
+
+  it('separates a sensitive action from a sensitive subject', () => {
+    // The act moves money.
+    expect(classifyRisk('Authorise payment').risk).toBe('sensitive');
+    expect(classifyRisk('Send the offer letter').risk).toBe('sensitive');
+    expect(classifyRisk('Grant access to an application').risk).toBe('sensitive');
+
+    // A write against a sensitive subject.
+    expect(classifyRisk('Update bank details').risk).toBe('sensitive');
+    expect(classifyRisk('Set claim access PIN').risk).toBe('sensitive');
+
+    // Only reading one. Nothing changes, so nothing to warn about.
+    expect(classifyRisk('Search payments').risk).toBe('read');
+    expect(classifyRisk('View payment history').risk).toBe('read');
+    expect(classifyRisk('Show employee access').risk).toBe('read');
+    expect(classifyRisk('List billing invoices').risk).toBe('read');
+  });
+
+  it('explains how it decided', () => {
+    expect(classifyRisk('Authorise payment').reason).toBe('consequential action');
+    expect(classifyRisk('Update bank details').reason).toContain('writes to');
+    expect(classifyRisk('Withdraw claim')).toMatchObject({ reason: 'destructive verb', matched: 'withdraw' });
+  });
+
+  it('classifies the claims-portal vocabulary', () => {
+    expect(classifyRisk('Withdraw claim').risk).toBe('destructive');
+    expect(classifyRisk('Cancel policy').risk).toBe('destructive');
+    expect(classifyRisk('Delete supporting document').risk).toBe('destructive');
+    expect(classifyRisk('File new claim').risk).toBe('write');
+    expect(classifyRisk('Request claim review').risk).toBe('write');
+    expect(classifyRisk('Renew policy').risk).toBe('write');
+    expect(classifyRisk('Check policy status').risk).toBe('read');
+    expect(classifyRisk('Track a claim').risk).toBe('read');
   });
 
   it('reports which keyword decided the classification', () => {

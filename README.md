@@ -12,7 +12,7 @@ clicking pixels.
 [![License: MIT](https://img.shields.io/badge/License-MIT-6ee7b7?style=flat-square)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](apps/extension/public/manifest.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.base.json)
-[![Tests](https://img.shields.io/badge/tests-153%20unit%20%2B%2016%20e2e-6ee7b7?style=flat-square)](#testing)
+[![Tests](https://img.shields.io/badge/tests-164%20unit%20%2B%2016%20e2e-6ee7b7?style=flat-square)](#testing)
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
@@ -21,7 +21,7 @@ clicking pixels.
 [On real websites](#on-real-websites) ·
 [Safety](#safety-and-privacy)
 
-<img src="docs/screenshots/demo-tool-call.png" alt="An agent calling a Reflex-generated tool on a legacy HR application; the page's own UI updates in response" width="880">
+<img src="docs/screenshots/demo-tool-call.png" alt="An agent calling a Reflex-generated tool on a government claims service; the service's own UI responds" width="880">
 
 </div>
 
@@ -64,26 +64,36 @@ the person approving one gets to see exactly which markup produced it.
 
 ### What that looks like
 
-A form the site already had:
+A form the service already had:
 
 ```html
-<form aria-label="Search employees" aria-description="Find an employee by name or email">
-  <label for="employee-query">Employee name or email</label>
-  <input id="employee-query" name="query" type="text" required />
-  <button type="submit">Search</button>
+<form aria-label="Search claims"
+      aria-description="Find a claim by reference number, claimant name or policy number">
+  <label for="claim-query">Reference, claimant or policy number</label>
+  <span class="hint" id="claim-query-hint">For example CLM-2026-0481, Okonkwo, or POL-4471-882.</span>
+  <input id="claim-query" name="query" type="text" required maxlength="60"
+         aria-describedby="claim-query-hint" />
+  <button type="submit">Search claims</button>
 </form>
 ```
 
-The tool Reflex proposes from it:
+The tool Reflex proposes from it — name, description, schema and the field's own
+hint, all lifted from markup that was already there:
 
 ```json
 {
-  "name": "search_employees",
-  "title": "Search employees",
-  "description": "Find an employee by name or email.",
+  "name": "search_claims",
+  "title": "Search claims",
+  "description": "Find a claim by reference number, claimant name or policy number.",
   "inputSchema": {
     "type": "object",
-    "properties": { "query": { "type": "string", "description": "Employee name or email" } },
+    "properties": {
+      "query": {
+        "type": "string",
+        "maxLength": 60,
+        "description": "For example CLM-2026-0481, Okonkwo, or POL-4471-882."
+      }
+    },
     "required": ["query"],
     "additionalProperties": false
   },
@@ -103,7 +113,7 @@ the text of the region the form updates — so a read-only tool returns **data**
 ### 1. Install the extension
 
 **Download:** [latest release](https://github.com/biratdatta/reflex/releases/latest) — or
-[`release/reflex-extension-0.1.0.zip`](release/reflex-extension-0.1.0.zip) from the tree (69 KB)
+[`release/reflex-extension-0.1.1.zip`](release/reflex-extension-0.1.1.zip) from the tree (69 KB)
 
 Unzip it, then:
 
@@ -126,15 +136,19 @@ npm run package             # → release/reflex-extension-<version>.zip
 ### 2. Run the demo application
 
 ```bash
-npm run dev:demo            # → http://localhost:3000/employees
+npm run dev:demo            # → http://localhost:3000/claims
 ```
 
-**ACME Employee Manager** is a fictional legacy HR app included in this repo. It uses nothing but
-standard HTML and good accessibility metadata — no Reflex-specific hooks — and it deliberately
-includes decoys ("Toggle navigation menu", "Next page", "Collapse this section") that must *not*
-become tools.
+**National Claims Portal** is a fictional government insurance service included in this repo — the
+Department of Insurance Services for the (entirely invented) State of Marisol. Public-sector services
+are the right subject for this: they are form-heavy, they are the software people are actually forced
+to use, and their accessibility metadata is genuinely excellent because it had to be.
 
-<img src="docs/screenshots/demo-app.png" alt="The ACME Employee Manager demo application" width="820">
+It uses nothing but standard HTML and good ARIA — no Reflex-specific hooks — and it deliberately
+plants decoys ("Toggle navigation menu", "Dismiss this notice", "Print this page", "Next page",
+"Expand all rows") that must *not* become tools.
+
+<img src="docs/screenshots/demo-register.png" alt="The National Claims Portal claims register" width="880">
 
 ### 3. Discover, review, approve
 
@@ -145,7 +159,7 @@ Open the app and click the Reflex button.
 <td width="33%" valign="top">
 <img src="docs/screenshots/popup-capabilities.png" alt="Reflex popup listing discovered capabilities grouped by risk">
 <b>Discover</b><br/>
-An agent-readiness score, and every capability found on the page, grouped read → write → sensitive →
+98% agent readiness, and eight capabilities on one claim page, grouped read → write → sensitive →
 destructive. Destructive ones are marked 🔒.
 </td>
 <td width="33%" valign="top">
@@ -171,46 +185,59 @@ it from the page's DevTools console, the way a real client would:
 
 ```js
 navigator.modelContext.listTools().map((tool) => tool.name);
-// → ['search_employees', 'change_department']
+// → ['search_claims', 'request_claim_review']
 
-await navigator.modelContext.callTool('search_employees', { query: 'Sarah Chen' });
-// → { success: true, observed: { region: 'Sarah Chen  E-482  sarah.chen@acme.test  Engineering …' } }
+await navigator.modelContext.callTool('search_claims', { query: 'Okonkwo' });
+// → { success: true,
+//     observed: { region: 'CLM-2026-0481  Amara Okonkwo  Flood damage  12,400.00  AWAITING DOCUMENTS' } }
 ```
 
 ---
 
 ## The demo walkthrough
 
-On [`/employees/E-482`](http://localhost:3000/employees/E-482) (Sarah Chen), Reflex finds seven
-capabilities across all four risk levels:
+On [`/claims/CLM-2026-0481`](http://localhost:3000/claims/CLM-2026-0481) — a flood-damage claim
+awaiting documents — Reflex finds eight capabilities spanning all four risk levels:
 
-| Capability | Risk | Behaviour |
-| --- | --- | --- |
-| `list_employee_applications` | `read` | Lists what she can access, and returns the table's contents |
-| `change_department` | `write` | Moves her to another department — enum of real options |
-| `assign_application` | `sensitive` | Grants an application (its description mentions *access*) |
-| `reset_password` | `sensitive` | Emails a reset link |
-| `revoke_application_access` | `destructive` | Removes access — **asks you first, in the page** |
-| `deactivate_employee` | `destructive` | Blocks sign-in — **asks you first, in the page** |
-| `set_temporary_password` | `sensitive` | Schema is **empty**: its only field is a password input |
+| Capability | Risk | Conf. | Behaviour |
+| --- | --- | --- | --- |
+| `list_claim_documents` | `read` | 100% | Lists documents on file, and returns the table's contents |
+| `add_supporting_document` | `write` | 100% | Records a document — the file input is skipped, since an agent cannot supply one |
+| `request_claim_review` | `write` | 100% | Sends the claim back to an assessor |
+| `update_correspondence_address` | `write` | 100% | Changes where letters go |
+| `authorise_payment` | `sensitive` | 100% | Releases money — the *act* is consequential |
+| `set_claim_access_pin` | `sensitive` | 55% | Schema is **empty**: its only field is a password input |
+| `delete_supporting_document` | `destructive` | 100% | Removes a document — **asks you first, in the page** |
+| `withdraw_claim` | `destructive` | 75% | Closes the case permanently — **asks you first** |
 
-Three things worth trying:
+Four things worth trying:
 
-1. **Enable `change_department`** and call it with `{"department": "finance"}`. The record, the status
-   banner and the department all update — because the app's own form was driven, not bypassed.
-2. **Enable `revoke_application_access`** and call it. Chrome asks for approval *in the page*.
-   Dismiss it and nothing happens; accept and AWS access is gone.
-3. **Break the fingerprint.** With `change_department` enabled, run this in the page console and call
-   the tool again:
+1. **A read tool that returns real data.** Enable `list_claim_documents` and call it with
+   `{"verification": "verified"}`. The table filters, and the tool returns what the page then showed —
+   not a bare "submitted".
+
+2. **A write tool moving the case along.** Enable `request_claim_review` and call it with
+   `{"reason": "valuation-dispute"}`. The claim's stage becomes *Under review* and the case history
+   gains an entry, because the service's own form was driven rather than bypassed.
+
+3. **Human approval on a destructive call.** Enable `withdraw_claim` and call it. Chrome asks you, in
+   the page, every time. Dismiss it and nothing happens; accept and the claim closes.
+
+4. **Break the fingerprint.** With `request_claim_review` enabled, run this in the page console and
+   call the tool again:
 
    ```js
-   document.getElementById('change-department').setAttribute('aria-label', 'Terminate employment');
+   document.getElementById('request-review').setAttribute('aria-label', 'Reject claim outright');
    ```
 
-   It refuses: `accessible name changed from "Change department" to "Terminate employment"`. The
+   It refuses: `accessible name changed from "Request claim review" to "Reject claim outright"`. The
    selector still matched. The meaning didn't.
 
----
+The register at [`/claims`](http://localhost:3000/claims) is where the schema generation shows off —
+`file_new_claim` yields nine parameters from one form, including a policy-number `pattern`, a
+`claimType` enum, a `date`, a `number` bounded 100–500,000, a radio group and a checkbox. And
+[`/policies`](http://localhost:3000/policies) demonstrates the classification split: `check_policy_status`
+is a `read`, `renew_policy` a `write`, `cancel_policy` `destructive`.
 
 ## On real websites
 
@@ -376,17 +403,31 @@ An additive heuristic over the signals above, capped at 100:
 `90–100` high · `75–89` review recommended · `50–74` low · **below 50 is not shown at all**
 (adjustable in settings).
 
+In practice, on the demo service: `search_claims` scores 100 (ARIA label, ARIA description, labelled
+and named field, real form, submit button, field hint), `withdraw_claim` 75 (a button, so no fields
+to score), and `set_claim_access_pin` 55 — it declares a field but exposes none, because that field
+is a password.
+
 ### Risk
 
 Keyword rules, checked most-dangerous-first, so "Search and revoke access" is `destructive` rather
 than `read`. Unknown verbs default to `write`.
 
-| Level | Sample keywords | Consequence |
+| Level | Decided by | Consequence |
 | --- | --- | --- |
-| `read` | search, find, view, list, filter, get | the only level eligible for bulk approval |
-| `write` | create, add, update, change, assign, import | individual approval |
-| `sensitive` | password, role, permission, access, billing, approve, send | individual approval |
-| `destructive` | delete, remove, revoke, deactivate, terminate, archive | individual approval **and** a confirmation in the page on every call |
+| `read` | a leading read verb — search, view, list, filter, check | the only level eligible for bulk approval |
+| `write` | a leading write verb — create, add, update, file, request, renew | individual approval |
+| `sensitive` | a **consequential action** (authorise, approve, send, reset, grant), or a write against a **sensitive subject** (password, bank, payment, role, access) | individual approval |
+| `destructive` | delete, remove, revoke, withdraw, cancel, terminate, archive | individual approval **and** a confirmation in the page on every call |
+
+Two refinements matter here, both forced out by real markup:
+
+**Sensitive actions are distinguished from sensitive subjects.** `authorise_payment` moves money, so
+it is sensitive. `search_payments` only looks, so it is a `read` — flagging it would be the kind of
+warning people learn to click past.
+
+**The leading verb wins.** "View claim record" is a `read` even though *record* is also a write verb,
+and "List documents recorded against this claim" is a `read` despite *recorded* in its description.
 
 Risk is advisory and editable in the inspector — the keyword that decided it is shown, so a
 misclassification is visible rather than mysterious.
@@ -417,7 +458,7 @@ reflex/
 │   │       ├── popup/          React review UI
 │   │       ├── background/     badge only
 │   │       └── shared/         messaging, storage, settings
-│   └── demo-legacy-app/        ACME Employee Manager
+│   └── demo-legacy-app/        National Claims Portal (the fictional service)
 ├── packages/
 │   ├── capability-model/       CapabilityCandidate, schema + message types
 │   ├── discovery-engine/       scanners, ARIA/labels, naming, risk, confidence,
@@ -445,7 +486,7 @@ what `npm run scan` does.
 | `npm run package` | Build and zip into `release/` |
 | `npm run dev:demo` | Serve the demo app on port 3000 |
 | `npm run scan -- <url>` | Point the discovery engine at any live page |
-| `npm test` | 153 unit tests (jsdom) |
+| `npm test` | 164 unit tests (jsdom) |
 | `npm run test:e2e` | 16 end-to-end tests in a real browser |
 | `npm run typecheck` | Typecheck every workspace |
 
@@ -489,14 +530,16 @@ uses it and nothing else in the codebase changes.
 ## Testing
 
 ```bash
-npm test          # 153 unit tests (jsdom)
+npm test          # 164 unit tests (jsdom)
 npm run test:e2e  # 16 tests in a real browser, against the built extension
 ```
 
 Unit tests cover naming, ARIA and label resolution, the full HTML → JSON Schema mapping, ignore rules
 (including real labels harvested from live sites), risk classification, selector and fingerprint
 generation, the adapter against three host styles, DOM execution — and discovery run over the demo
-app's **own rendered markup**, so a regression in the demo's accessibility is a test failure.
+service's **own rendered markup**, so a regression in its accessibility is a test failure. Those
+tests also assert the classification split directly: `search_payments` must stay `read` while
+`authorise_payment` must be `sensitive`.
 
 End-to-end tests need Playwright's Chromium once:
 
