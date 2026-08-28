@@ -1,0 +1,34 @@
+{
+  "name": "reflex",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Reflex \u2014 a compatibility layer for the agentic web. Discovers WebMCP tools from existing website semantics.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:demo": "npm run dev -w @reflex/demo-legacy-app",
+    "dev:extension": "npm run dev -w @reflex/extension",
+    "build": "npm run build -w @reflex/extension && npm run build -w @reflex/demo-legacy-app",
+    "build:extension": "npm run build -w @reflex/extension",
+    "build:demo": "npm run build -w @reflex/demo-legacy-app",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "scan": "vite build --config tools/vite.scan.config.ts && node tools/scan-site.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.2",
+    "@types/chrome": "^0.0.271",
+    "@types/node": "^20.16.10",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8",
+    "vitest": "^2.1.2"
+  }
+}
