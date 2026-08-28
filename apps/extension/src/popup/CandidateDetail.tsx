@@ -52,39 +52,61 @@ export const CandidateDetail = ({
   return (
     <>
       <div className="topbar">
-        <button type="button" className="ghost icon" onClick={onBack} title="Back to the list">
+        <button type="button" className="icon" onClick={onBack} title="Back to the list">
           ←
         </button>
         <span className="brand">REFLEX</span>
         <span className="spacer" />
-        <button type="button" className="ghost" onClick={onHighlight} title="Flash this element in the page">
-          Show on page
+        <button type="button" className="icon" onClick={onHighlight} title="Flash this element in the page">
+          show on page
         </button>
       </div>
 
       <div className="section">
-        <div className="detail-head">
-          <div style={{ flex: 1 }}>
+        <div className="detail-title">
+          <span className="stripe" style={{ background: `var(--${risk})`, width: 3, alignSelf: 'stretch' }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
             <h1>{candidate.title}</h1>
-            <code className="muted">{candidate.name}</code>
+            <span className="toolname">{candidate.name}</span>
           </div>
         </div>
         <div className="detail-meta">
           <span className={`badge ${risk}`}>{RISK_LABEL[risk]}</span>
-          <span className="muted">
+          <span className="dim">
             {candidate.confidence}% · {confidenceLabel(candidate.confidence)}
           </span>
-          {active && <span className="badge read">✓ tool active</span>}
+          {candidate.duplicateCount ? (
+            <span className="dim">· {candidate.duplicateCount} identical controls</span>
+          ) : null}
+          {active && <span className="badge read">✓ active</span>}
         </div>
-        <p className="notice info" style={{ marginTop: 10 }}>
+        <p className="note" style={{ marginTop: 10 }}>
           {RISK_NOTE[risk]}
         </p>
+        {candidate.confidenceReasons?.length ? (
+          <div className="reasons" title="What this page failed to declare">
+            {candidate.confidenceReasons.map((reason) => (
+              <span key={reason}>{reason}</span>
+            ))}
+          </div>
+        ) : null}
+        {candidate.suppressed ? (
+          <p className="note held" style={{ marginTop: 10 }}>
+            Held back by triage: {candidate.suppressedReason}. You can still enable it.
+          </p>
+        ) : null}
+        {candidate.duplicateCount ? (
+          <p className="note warn" style={{ marginTop: 10 }}>
+            This page has {candidate.duplicateCount} controls with the same name and shape, and gives no way to
+            tell them apart. Enabling this registers the first one — use “show on page” to check which.
+          </p>
+        ) : null}
       </div>
 
       <div className="section">
         <h2>Generated tool</h2>
-        <p className="muted" style={{ margin: '0 0 8px' }}>
-          Reflex inferred this from the page. Correct anything that reads wrong before you enable it.
+        <p className="dim" style={{ margin: '0 0 9px', fontSize: 10.5 }}>
+          Inferred from the page. Correct anything that reads wrong before enabling it.
         </p>
         <label className="field">
           Tool name
@@ -121,10 +143,8 @@ export const CandidateDetail = ({
                   {property.type}
                   {property.format ? ` · ${property.format}` : ''}
                   {required.includes(key) ? ' · required' : ''}
-                  {property.enum ? (
-                    <div className="muted">one of: {property.enum.join(', ')}</div>
-                  ) : null}
-                  {property.description ? <div className="muted">{property.description}</div> : null}
+                  {property.enum ? <div className="dim">one of: {property.enum.join(', ')}</div> : null}
+                  {property.description ? <div className="dim">{property.description}</div> : null}
                 </dd>
               </div>
             ))}
@@ -139,9 +159,9 @@ export const CandidateDetail = ({
           {candidate.evidence.map((item, index) => (
             <li key={`${item.type}-${index}`}>
               <span className="type">{evidenceLabel[item.type] ?? item.type}</span>
-              <div>
+              <div className="val">
                 {item.value}
-                {item.origin ? <span className="muted"> · {item.origin}</span> : null}
+                {item.origin ? <span className="origin"> · {item.origin}</span> : null}
               </div>
             </li>
           ))}
@@ -165,31 +185,31 @@ export const CandidateDetail = ({
       </div>
 
       <div className="section">
-        {error ? <p className="notice error">{error}</p> : null}
+        {error ? <p className="note bad">{error}</p> : null}
         {risk === 'destructive' ? (
-          <p className="notice warn">
-            🔒 Destructive. Reflex will ask you again, in the page, each time an agent calls this tool.
+          <p className="note warn">
+            🔒 Destructive. Reflex asks you again, in the page, each time an agent calls this.
           </p>
         ) : null}
-        <div className="actions">
-          <button type="button" className="danger" disabled={busy} onClick={onReject}>
-            Reject
+      </div>
+
+      <div className="actions">
+          <button type="button" className="bad" disabled={busy} onClick={onReject}>
+            reject
           </button>
           {status === 'approved' && !edited ? (
-            <button type="button" disabled={busy} onClick={onReset}>
-              Disable tool
+            <button type="button" className="neutral" disabled={busy} onClick={onReset}>
+              disable tool
             </button>
           ) : (
             <button
               type="button"
-              className="primary"
               disabled={busy || !name.trim()}
               onClick={() => onApprove({ name: name.trim(), description: description.trim(), risk })}
             >
-              {status === 'approved' ? 'Update tool' : 'Enable tool'}
+              {status === 'approved' ? 'update tool' : 'enable tool'}
             </button>
           )}
-        </div>
       </div>
     </>
   );

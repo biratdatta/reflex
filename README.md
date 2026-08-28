@@ -12,7 +12,7 @@ clicking pixels.
 [![License: MIT](https://img.shields.io/badge/License-MIT-6ee7b7?style=flat-square)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](apps/extension/public/manifest.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.base.json)
-[![Tests](https://img.shields.io/badge/tests-164%20unit%20%2B%2016%20e2e-6ee7b7?style=flat-square)](#testing)
+[![Tests](https://img.shields.io/badge/tests-181%20unit%20%2B%2019%20e2e-6ee7b7?style=flat-square)](#testing)
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
@@ -113,7 +113,7 @@ the text of the region the form updates — so a read-only tool returns **data**
 ### 1. Install the extension
 
 **Download:** [latest release](https://github.com/biratdatta/reflex/releases/latest) — or
-[`release/reflex-extension-0.1.1.zip`](release/reflex-extension-0.1.1.zip) from the tree (69 KB)
+[`release/reflex-extension-0.2.0.zip`](release/reflex-extension-0.2.0.zip) from the tree (69 KB)
 
 Unzip it, then:
 
@@ -238,6 +238,46 @@ The register at [`/claims`](http://localhost:3000/claims) is where the schema ge
 `claimType` enum, a `date`, a `number` bounded 100–500,000, a radio group and a checkbox. And
 [`/policies`](http://localhost:3000/policies) demonstrates the classification split: `check_policy_status`
 is a `read`, `renew_policy` a `write`, `cancel_policy` `destructive`.
+
+## Review, not just discovery
+
+Discovery is the easy half. On one YouTube watch page Reflex finds **57 candidates, every one scoring
+55%**, named `1_reply`, `150_replies`, `166_replies` — the "N replies" button on every comment. A list
+that long is not a review queue, it is a wall, and a wall is worth exactly as much as an empty panel.
+
+<img src="docs/screenshots/popup-triage.png" alt="Reflex reporting that nothing on a YouTube page is worth reviewing, and why" width="380" align="right">
+
+So every scan is triaged before it reaches you:
+
+**Two floors, not one.** A flat confidence floor is the wrong instrument, because real working
+capabilities on well-built government forms *also* score 50–60% — Companies House's
+`search_the_register` and the NHS pharmacy finder both do, having never written an
+`aria-description`. What separates them from the noise is the **source**: a form arrives with a typed
+schema, which is evidence in itself and something a reviewer can judge; a button is an
+unparameterised action inferred from two words of label, so it needs corroboration. Forms are held to
+**50%**, buttons to **70%**.
+
+**Counts are not capabilities.** A label beginning with a number — "1 reply", "349 languages" — was a
+tally, not an action. Those are held back on sight.
+
+**Indistinguishable duplicates collapse.** `show_cards`, `show_cards_2` and `show_cards_3` become one
+row carrying `×3`, because the page gave no way to tell them apart, and an agent could not choose
+between them either.
+
+**Nothing is discarded.** Everything held back stays one click away behind *show N held back*, each
+row explaining why it was held, and any of them can still be enabled.
+
+**A score explains itself.** `55%` tells a reviewer nothing on its own, so the inspector lists what
+the page failed to declare: *no ARIA description*, *no field labels*, *declares fields but exposes
+none*.
+
+The result on the page above: **0 shown of 13 found** — and a sentence saying why, instead of
+thirteen rows of noise. On the demo service it is 8 of 8, because that service actually declares what
+it does.
+
+<br clear="all">
+
+---
 
 ## On real websites
 
@@ -486,8 +526,8 @@ what `npm run scan` does.
 | `npm run package` | Build and zip into `release/` |
 | `npm run dev:demo` | Serve the demo app on port 3000 |
 | `npm run scan -- <url>` | Point the discovery engine at any live page |
-| `npm test` | 164 unit tests (jsdom) |
-| `npm run test:e2e` | 16 end-to-end tests in a real browser |
+| `npm test` | 181 unit tests (jsdom) |
+| `npm run test:e2e` | 19 end-to-end tests in a real browser |
 | `npm run typecheck` | Typecheck every workspace |
 
 ---
@@ -530,8 +570,8 @@ uses it and nothing else in the codebase changes.
 ## Testing
 
 ```bash
-npm test          # 164 unit tests (jsdom)
-npm run test:e2e  # 16 tests in a real browser, against the built extension
+npm test          # 181 unit tests (jsdom)
+npm run test:e2e  # 19 tests in a real browser, against the built extension
 ```
 
 Unit tests cover naming, ARIA and label resolution, the full HTML → JSON Schema mapping, ignore rules

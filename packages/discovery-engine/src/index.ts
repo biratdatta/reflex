@@ -9,4 +9,5 @@ export * from './resultRegion.js';
 export * from './formScanner.js';
 export * from './buttonScanner.js';
 export * from './readiness.js';
+export * from './triage.js';
 export * from './candidateBuilder.js';

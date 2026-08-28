@@ -1,7 +1,7 @@
 import type { CapabilityCandidate, Evidence } from '@reflex/capability-model';
 import { buildFormSchema, type FormSchemaResult } from '@reflex/schema-generator';
 import { resolveAccessibleDescription, resolveAccessibleName } from './ariaResolver.js';
-import { scoreConfidence } from './confidence.js';
+import { explainConfidence, scoreConfidence } from './confidence.js';
 import { isExcludedElement, shouldIgnoreLabel } from './ignoreRules.js';
 import { hasAuthoredLabel, resolveControlLabel } from './labelResolver.js';
 import { asSentence, humanize, normalizeToolName, uniqueToolName } from './naming.js';
@@ -90,7 +90,7 @@ export const scanForm = (form: Element, options: ScanOptions = {}): CapabilityCa
   }
 
   const { labelled, described } = describeFields(schemaResult);
-  const confidence = scoreConfidence({
+  const confidenceInput = {
     hasAriaLabel: name.from === 'aria-label' || name.from === 'aria-labelledby',
     hasAriaDescription: description.from === 'aria-description' || description.from === 'aria-describedby',
     allFieldsLabelled: schemaResult.fields.length > 0 && labelled === schemaResult.fields.length,
@@ -101,7 +101,8 @@ export const scanForm = (form: Element, options: ScanOptions = {}): CapabilityCa
     hasFieldDescriptions: described > 0,
     fieldCount: schemaResult.fields.length,
     expectsFields: form.querySelectorAll('input, select, textarea').length > 0,
-  });
+  };
+  const confidence = scoreConfidence(confidenceInput);
 
   const classification = classifyRisk(name.value, description.value);
   const risk = escalateRisk(classification.risk, schemaResult.hasPasswordField);
@@ -122,6 +123,7 @@ export const scanForm = (form: Element, options: ScanOptions = {}): CapabilityCa
     confidence,
     risk,
     evidence,
+    confidenceReasons: explainConfidence(confidenceInput),
   };
 
   if (region) candidate.resultSelector = region.selector;

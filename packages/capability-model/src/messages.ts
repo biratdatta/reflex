@@ -4,11 +4,23 @@ import type { ReadinessScore } from './readiness.js';
 /** Namespaced so page-context messages can never be confused with a host page's own traffic. */
 export const REFLEX_CHANNEL = 'reflex/v1';
 
+export interface TriageCounts {
+  total: number;
+  shown: number;
+  hiddenWeak: number;
+  hiddenDuplicate: number;
+  hiddenUnnameable: number;
+}
+
 export interface PageSnapshot {
   origin: string;
   url: string;
   title: string;
+  /** What triage judged worth a human decision. */
   candidates: CapabilityCandidate[];
+  /** Held back by triage; each carries a suppressedReason. Shown behind "show all". */
+  suppressed: CapabilityCandidate[];
+  counts: TriageCounts;
   readiness: ReadinessScore;
   scannedAt: number;
   /** Ids currently registered with the page's WebMCP host. */

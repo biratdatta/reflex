@@ -55,6 +55,26 @@ export const scoreConfidence = (input: ConfidenceInput): number => {
   return Math.max(0, Math.min(100, score));
 };
 
+/**
+ * Say what a candidate is missing, in the reviewer's terms. A bare "55%" tells
+ * someone nothing about whether to trust it; "no ARIA description, no fields"
+ * tells them exactly what the page failed to declare.
+ */
+export const explainConfidence = (input: ConfidenceInput): string[] => {
+  const missing: string[] = [];
+  if (!input.hasAriaLabel) missing.push('no ARIA label');
+  if (!input.hasAriaDescription) missing.push('no ARIA description');
+  if (input.expectsFields && !input.allFieldsLabelled) {
+    missing.push(input.someFieldsLabelled ? 'some fields unlabelled' : 'no field labels');
+  }
+  if (!input.isSemanticElement) missing.push('not a semantic element');
+  if (input.expectsFields && !input.allFieldsNamed) missing.push('fields without name attributes');
+  if (!input.hasExplicitText) missing.push('no visible label text');
+  if (input.expectsFields && input.fieldCount === 0) missing.push('declares fields but exposes none');
+  if (!input.expectsFields && input.fieldCount === 0) missing.push('takes no arguments');
+  return missing;
+};
+
 export const confidenceFromEvidence = (evidence: Evidence[]): number =>
   scoreConfidence({
     hasAriaLabel: evidence.some((e) => e.type === 'aria-label'),

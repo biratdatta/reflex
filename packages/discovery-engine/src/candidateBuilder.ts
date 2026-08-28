@@ -3,18 +3,23 @@ import { scanButtons, type ButtonScanOptions } from './buttonScanner.js';
 import { IGNORE_THRESHOLD } from './confidence.js';
 import { findFormLikeElements, scanForms } from './formScanner.js';
 import { scoreReadiness } from './readiness.js';
+import { triageCandidates, type TriageCounts, type TriageOptions } from './triage.js';
 import type { ReadinessScore } from '@reflex/capability-model';
 
-export interface DiscoveryOptions extends ButtonScanOptions {
-  /** Candidates scoring below this are dropped. Defaults to 50, per the PRD. */
+export interface DiscoveryOptions extends ButtonScanOptions, TriageOptions {
+  /** Candidates scoring below this never reach triage. Defaults to 50, per the PRD. */
   threshold?: number;
   includeButtons?: boolean;
   includeForms?: boolean;
 }
 
 export interface DiscoveryResult {
+  /** What is worth a human decision, after triage. */
   candidates: CapabilityCandidate[];
+  /** Held back by triage, each with a `suppressedReason`. */
+  suppressed: CapabilityCandidate[];
   readiness: ReadinessScore;
+  counts: TriageCounts;
 }
 
 /**
@@ -46,5 +51,14 @@ export const discoverCapabilities = (root: ParentNode, options: DiscoveryOptions
     return true;
   });
 
-  return { candidates: unique, readiness: scoreReadiness(root, unique) };
+  // Readiness describes the page, so it is scored before triage narrows the list.
+  const readiness = scoreReadiness(root, unique);
+  const triaged = triageCandidates(unique, options);
+
+  return {
+    candidates: triaged.candidates,
+    suppressed: triaged.suppressed,
+    readiness,
+    counts: triaged.counts,
+  };
 };

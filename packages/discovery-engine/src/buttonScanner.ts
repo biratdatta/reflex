@@ -1,6 +1,6 @@
 import { emptySchema, type CapabilityCandidate, type Evidence } from '@reflex/capability-model';
 import { resolveAccessibleDescription, resolveAccessibleName, visibleText } from './ariaResolver.js';
-import { IGNORE_THRESHOLD, scoreConfidence } from './confidence.js';
+import { IGNORE_THRESHOLD, explainConfidence, scoreConfidence } from './confidence.js';
 import { isExcludedElement, shouldIgnoreLabel } from './ignoreRules.js';
 import { asSentence, normalizeToolName, uniqueToolName } from './naming.js';
 import { resolveResultRegion } from './resultRegion.js';
@@ -62,7 +62,7 @@ export const scanButton = (el: Element, options: ButtonScanOptions = {}): Capabi
   const role = el.getAttribute('role');
   if (role) evidence.push({ type: 'role', value: role });
 
-  const confidence = scoreConfidence({
+  const confidenceInput = {
     hasAriaLabel: name.from === 'aria-label' || name.from === 'aria-labelledby',
     hasAriaDescription: description.from === 'aria-description' || description.from === 'aria-describedby',
     allFieldsLabelled: false,
@@ -73,7 +73,8 @@ export const scanButton = (el: Element, options: ButtonScanOptions = {}): Capabi
     hasFieldDescriptions: false,
     fieldCount: 0,
     expectsFields: false,
-  });
+  };
+  const confidence = scoreConfidence(confidenceInput);
 
   if (confidence < threshold) return null;
 
@@ -95,6 +96,7 @@ export const scanButton = (el: Element, options: ButtonScanOptions = {}): Capabi
     confidence,
     risk: classification.risk,
     evidence,
+    confidenceReasons: explainConfidence(confidenceInput),
   };
 
   if (region) candidate.resultSelector = region.selector;

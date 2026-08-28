@@ -38,6 +38,9 @@ const bridge = new BridgeMessenger();
 let settings: ReflexSettings | null = null;
 let state: OriginState | null = null;
 let candidates: CapabilityCandidate[] = [];
+/** Held back by triage. Approvable, but only from the popup's "show all" view. */
+let suppressed: CapabilityCandidate[] = [];
+let counts: PageSnapshot['counts'] = { total: 0, shown: 0, hiddenWeak: 0, hiddenDuplicate: 0, hiddenUnnameable: 0 };
 let readiness = { score: 0, breakdown: {}, counts: {} } as PageSnapshot['readiness'];
 let activeToolIds: string[] = [];
 let webmcp = { available: false, flavor: 'none' };
@@ -65,15 +68,24 @@ const rescan = async (): Promise<void> => {
   const originState = await currentState();
   const result = scanPage(config.confidenceThreshold, originState);
   candidates = result.candidates;
+  suppressed = result.suppressed;
+  counts = result.counts;
   readiness = result.readiness;
   scannedAt = Date.now();
 };
+
+/** Anything the user could act on, whether triage surfaced it or not. */
+const findCandidate = (candidateId: string): CapabilityCandidate | undefined =>
+  candidates.find((entry) => entry.id === candidateId) ??
+  suppressed.find((entry) => entry.id === candidateId);
 
 const snapshot = (): PageSnapshot => ({
   origin,
   url: window.location.href,
   title: document.title,
   candidates,
+  suppressed,
+  counts,
   readiness,
   scannedAt,
   activeToolIds,
@@ -125,7 +137,9 @@ const syncTools = async (): Promise<void> => {
     return;
   }
 
-  const approved = candidates.filter((candidate) => originState.approvedTools.includes(candidate.id));
+  const approved = [...candidates, ...suppressed].filter((candidate) =>
+    originState.approvedTools.includes(candidate.id),
+  );
   const { added, removed } = diffIds(activeToolIds, approved.map((candidate) => candidate.id));
 
   for (const id of removed) await unregisterTool(id);
@@ -224,7 +238,7 @@ const respond = async (message: ExtensionMessage): Promise<ExtensionResponse> =>
     }
 
     case 'APPROVE_CANDIDATE': {
-      const candidate = candidates.find((entry) => entry.id === message.candidateId);
+      const candidate = findCandidate(message.candidateId);
       if (!candidate) return { ok: false, error: 'That capability is no longer on the page' };
 
       state = await updateOriginState(origin, (current) =>
@@ -233,6 +247,7 @@ const respond = async (message: ExtensionMessage): Promise<ExtensionResponse> =>
       // Apply edits immediately, so what registers is what the reviewer saw.
       const edited = withOverride(candidate, state.overrides[candidate.id]);
       candidates = candidates.map((entry) => (entry.id === edited.id ? edited : entry));
+      suppressed = suppressed.map((entry) => (entry.id === edited.id ? edited : entry));
       await registerTool(edited);
       return { ok: true, snapshot: snapshot(), state };
     }
@@ -275,7 +290,7 @@ const respond = async (message: ExtensionMessage): Promise<ExtensionResponse> =>
     }
 
     case 'HIGHLIGHT_CANDIDATE': {
-      const candidate = candidates.find((entry) => entry.id === message.candidateId);
+      const candidate = findCandidate(message.candidateId);
       if (!candidate) return { ok: false, error: 'That capability is no longer on the page' };
       await bridge.send({ type: 'HIGHLIGHT', selector: candidate.elementSelector });
       return { ok: true, snapshot: snapshot(), state: originState };

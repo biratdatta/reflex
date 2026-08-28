@@ -12,9 +12,15 @@ declare global {
 }
 
 window.__reflexScan = (threshold = 50) => {
-  const { candidates, readiness } = discoverCapabilities(document, { threshold });
+  const { candidates, suppressed, readiness, counts } = discoverCapabilities(document, { threshold });
   return {
     readiness,
+    counts,
+    suppressedSample: suppressed.slice(0, 6).map((candidate) => ({
+      name: candidate.name,
+      confidence: candidate.confidence,
+      reason: candidate.suppressedReason,
+    })),
     candidates: candidates.map((candidate) => ({
       name: candidate.name,
       title: candidate.title,
@@ -24,6 +30,8 @@ window.__reflexScan = (threshold = 50) => {
       parameters: Object.keys(candidate.inputSchema.properties),
       description: candidate.description,
       selector: candidate.elementSelector,
+      duplicateCount: candidate.duplicateCount,
+      confidenceReasons: candidate.confidenceReasons,
     })),
   };
 };

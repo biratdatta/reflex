@@ -54,29 +54,46 @@ for (const url of urls) {
     // MAIN-world injection) is not subject to page CSP.
     await page.addInitScript({ content: harness });
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45_000 });
-    // Give client-rendered pages a moment to paint their controls.
+    // Client-rendered pages paint their controls late, and lazy lists only
+    // materialise once scrolled. Without this a heavy site reports a fraction
+    // of what a real browser session shows.
     await page.waitForTimeout(2500);
+    for (let pass = 0; pass < 4; pass += 1) {
+      await page.mouse.wheel(0, 1400);
+      await page.waitForTimeout(700);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(600);
     const scan = await page.evaluate((limit) => window.__reflexScan(limit), threshold);
     results.push({ url, ...scan });
 
     if (!asJson) {
       const { readiness, candidates } = scan;
       console.log(`\n${'─'.repeat(78)}\n${url}`);
+      const c = scan.counts;
       console.log(
         `readiness ${String(readiness.score).padStart(3)}%   ` +
           `semantic ${Math.round(readiness.breakdown.semanticControls * 100)}% · ` +
           `named ${Math.round(readiness.breakdown.ariaCoverage * 100)}% · ` +
           `forms ${Math.round(readiness.breakdown.formQuality * 100)}%   ` +
-          `(${readiness.counts.interactiveControls} controls, ${candidates.length} capabilities)`,
+          `(${readiness.counts.interactiveControls} controls)`,
+      );
+      console.log(
+        `triage    ${c.shown} shown of ${c.total} found   ` +
+          `(hidden: ${c.hiddenWeak} weak, ${c.hiddenDuplicate} duplicate, ${c.hiddenUnnameable} unnameable)`,
       );
       for (const candidate of candidates) {
         const params = candidate.parameters.length ? `(${candidate.parameters.join(', ')})` : '()';
+        const dup = candidate.duplicateCount ? `  ×${candidate.duplicateCount}` : '';
         console.log(
           `  ${RISK_MARK[candidate.risk]} ${String(candidate.confidence).padStart(3)}%  ` +
-            `${candidate.name}${params}`,
+            `${candidate.name}${params}${dup}`,
         );
       }
-      if (!candidates.length) console.log('  — nothing above the confidence threshold');
+      if (!candidates.length) console.log('  — nothing worth reviewing on this page');
+      for (const held of scan.suppressedSample ?? []) {
+        console.log(`  · ${String(held.confidence).padStart(3)}%  ${held.name} — ${held.reason}`);
+      }
     }
   } catch (error) {
     results.push({ url, error: error instanceof Error ? error.message : String(error) });

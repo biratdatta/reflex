@@ -58,7 +58,14 @@ export interface CapabilityCandidate {
    * Without it a read-only tool could only report "submitted".
    */
   resultSelector?: string;
-  /** Set when the candidate was scored below the ignore threshold or matched an ignore rule. */
+  /** What the page failed to declare, in a reviewer's terms. See explainConfidence. */
+  confidenceReasons?: string[];
+  /**
+   * How many indistinguishable controls this row stands for. The page gave no
+   * way to tell them apart, so they are presented once with a count.
+   */
+  duplicateCount?: number;
+  /** Set when triage held the candidate back. See discovery-engine/triage.ts. */
   suppressed?: boolean;
   suppressedReason?: string;
 }

@@ -4,10 +4,13 @@ import type {
   CapabilityCandidate,
   OriginState,
   ReadinessScore,
+  TriageCounts,
 } from '@reflex/capability-model';
 
 export interface ScanOutput {
   candidates: CapabilityCandidate[];
+  suppressed: CapabilityCandidate[];
+  counts: TriageCounts;
   readiness: ReadinessScore;
 }
 
@@ -27,8 +30,12 @@ export const withOverride = (
 
 export const scanPage = (threshold: number, state: OriginState): ScanOutput => {
   const result: DiscoveryResult = discoverCapabilities(document, { threshold });
+  const applyOverrides = (list: CapabilityCandidate[]) =>
+    list.map((candidate) => withOverride(candidate, state.overrides[candidate.id]));
   return {
-    candidates: result.candidates.map((candidate) => withOverride(candidate, state.overrides[candidate.id])),
+    candidates: applyOverrides(result.candidates),
+    suppressed: applyOverrides(result.suppressed),
+    counts: result.counts,
     readiness: result.readiness,
   };
 };

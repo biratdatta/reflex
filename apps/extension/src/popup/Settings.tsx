@@ -13,7 +13,7 @@ interface Props {
 export const Settings = ({ settings, origin, enabled, onChange, onSetEnabled, onDisableAll, onBack }: Props) => (
   <>
     <div className="topbar">
-      <button type="button" className="ghost icon" onClick={onBack} title="Back">
+      <button type="button" className="icon" onClick={onBack} title="Back">
         ←
       </button>
       <span className="brand">REFLEX</span>
@@ -22,9 +22,7 @@ export const Settings = ({ settings, origin, enabled, onChange, onSetEnabled, on
 
     <div className="section">
       <h2>This site</h2>
-      <p className="muted" style={{ margin: '0 0 8px' }}>
-        <code>{origin}</code>
-      </p>
+      <p className="dim" style={{ margin: '0 0 9px' }}>{origin}</p>
       <label className="toggle">
         <input type="checkbox" checked={enabled} onChange={(event) => onSetEnabled(event.target.checked)} />
         <span>
@@ -32,8 +30,8 @@ export const Settings = ({ settings, origin, enabled, onChange, onSetEnabled, on
           <small>Turning this off withdraws every registered tool immediately.</small>
         </span>
       </label>
-      <button type="button" className="danger" onClick={onDisableAll}>
-        Withdraw all tools on this site
+      <button type="button" className="chip" onClick={onDisableAll}>
+        withdraw all tools on this site
       </button>
     </div>
 
@@ -76,9 +74,9 @@ export const Settings = ({ settings, origin, enabled, onChange, onSetEnabled, on
           onChange={(event) => onChange({ confidenceThreshold: Number(event.target.value) })}
         />
       </label>
-      <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-        Candidates scoring below this are not shown. 50% is the default; raising it hides guesses built on weaker
-        metadata.
+      <p className="dim" style={{ margin: 0, fontSize: 10.5, lineHeight: 1.5 }}>
+        The floor before triage. Triage then judges forms at 50% and buttons at 70%, because a form arrives with a
+        schema and a button is two words of label.
       </p>
     </div>
 
@@ -111,7 +109,7 @@ export const Settings = ({ settings, origin, enabled, onChange, onSetEnabled, on
       </label>
     </div>
 
-    <p className="footer">
+    <p className="foot">
       Discovery runs entirely in this browser. Reflex sends no page content anywhere, and approvals never cross from
       one origin to another.
     </p>
