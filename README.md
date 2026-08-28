@@ -15,7 +15,7 @@ clicking pixels.
 [![Tests](https://img.shields.io/badge/tests-153%20unit%20%2B%2016%20e2e-6ee7b7?style=flat-square)](#testing)
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
-[**Download the extension**](release/reflex-extension-0.1.0.zip) ·
+[**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
 [Quick start](#quick-start) ·
 [How it works](#how-it-works) ·
 [On real websites](#on-real-websites) ·
@@ -102,7 +102,8 @@ the text of the region the form updates — so a read-only tool returns **data**
 
 ### 1. Install the extension
 
-**Download:** [`release/reflex-extension-0.1.0.zip`](release/reflex-extension-0.1.0.zip) (69 KB)
+**Download:** [latest release](https://github.com/biratdatta/reflex/releases/latest) — or
+[`release/reflex-extension-0.1.0.zip`](release/reflex-extension-0.1.0.zip) from the tree (69 KB)
 
 Unzip it, then:
 
