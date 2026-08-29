@@ -16,7 +16,7 @@ clicking pixels.
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
-[**Watch the 47s demo**](docs/reflex-demo.mp4) ·
+[**Watch the 47s demo**](docs/reflex-demo-narrated.mp4) ·
 [Quick start](#quick-start) ·
 [How it works](#how-it-works) ·
 [On real websites](#on-real-websites) ·
@@ -30,12 +30,13 @@ clicking pixels.
 
 ## The 47-second version
 
-[![Reflex demo](docs/screenshots/demo-video-poster.png)](docs/reflex-demo.mp4)
+[![Reflex demo](docs/screenshots/demo-video-poster.png)](docs/reflex-demo-narrated.mp4)
 
-**[▶ Watch the demo](docs/reflex-demo.mp4)** — 47 seconds, narrated, recorded from the built
-extension against the running demo service (also attached to
-[the release](https://github.com/biratdatta/reflex/releases/latest), where a WebM cut sits alongside
-it).
+**[▶ Watch the demo](docs/reflex-demo-narrated.mp4)** — 47 seconds, narrated, recorded from the built
+extension against the running demo service. Prefer it quiet? The same cut without the voiceover is
+[**here**](docs/reflex-demo-silent.mp4) — the on-screen captions carry the commentary either way.
+Both are attached to [the release](https://github.com/biratdatta/reflex/releases/latest), in MP4 and
+WebM.
 
 A government claims service with no WebMCP and no agent hooks. Reflex reads it, proposes tools, a
 human approves two, an agent calls `search_claims({"query": "Okonkwo"})` — and the service's own form
