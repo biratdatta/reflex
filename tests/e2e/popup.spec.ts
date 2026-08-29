@@ -175,7 +175,7 @@ test.describe('the Reflex popup', () => {
     await reflex.attach(page);
 
     const popup = await reflex.openPopup(page);
-    await popup.locator('button', { hasText: /enable \d read-only/ }).click();
+    await popup.locator('button', { hasText: /enable \d read-only/i }).click();
     await expect
       .poll(async () => page.evaluate(() => navigator.modelContext!.listTools!().length))
       .toBe(3);
@@ -186,5 +186,86 @@ test.describe('the Reflex popup', () => {
     await expect(toggle).not.toBeChecked();
 
     await expect.poll(async () => page.evaluate(() => navigator.modelContext!.listTools!().length)).toBe(0);
+  });
+});
+
+/**
+ * Five panel designs share one component tree and one set of decisions, so the
+ * risk is that a design drifts — a row that renders in one theme and not
+ * another, or an approval path that only works in the default look.
+ */
+test.describe('the five panel designs', () => {
+  const THEMES = ['instrument', 'quiet', 'native', 'civic', 'ledger'] as const;
+
+  test('every design renders the same capabilities', async ({ context, reflex }) => {
+    const page = await context.newPage();
+    await page.goto('/claims/CLM-2026-0481');
+    await reflex.attach(page);
+
+    for (const theme of THEMES) {
+      await reflex.setTheme(theme);
+      const popup = await reflex.openPopup(page);
+
+      await expect(popup.locator('html')).toHaveAttribute('data-panel', theme);
+      await expect(popup.locator('.row')).toHaveCount(8);
+      await expect(popup.locator('.tally')).toContainText('8 shown of 8 found');
+      // Whatever each design leads with, the capability is identifiable.
+      await expect(popup.locator('.row').first()).toContainText(/list claim documents/i);
+      await popup.close();
+    }
+  });
+
+  test('approving works the same in a design that is not the default', async ({ context, reflex }) => {
+    const page = await context.newPage();
+    await page.goto('/claims/CLM-2026-0481');
+    await reflex.attach(page);
+
+    await reflex.setTheme('civic');
+    const popup = await reflex.openPopup(page);
+
+    await popup.locator('.row', { hasText: 'request claim review' }).click();
+    await expect(popup.locator('h1')).toHaveText('Request claim review');
+    await popup.locator('button', { hasText: 'enable tool' }).click();
+
+    await expect
+      .poll(async () => page.evaluate(() => navigator.modelContext!.listTools!().map((tool) => tool.name)))
+      .toEqual(['request_claim_review']);
+  });
+
+  test('each design shows what its language calls for', async ({ context, reflex }) => {
+    const page = await context.newPage();
+    await page.goto('/claims/CLM-2026-0481');
+    await reflex.attach(page);
+
+    const leads = async (theme: (typeof THEMES)[number]) => {
+      await reflex.setTheme(theme);
+      const popup = await reflex.openPopup(page);
+      const shown = await popup.locator('.row').first().evaluate((row) => {
+        const visible = (selector: string) => {
+          const node = row.querySelector(selector);
+          return Boolean(node && getComputedStyle(node).display !== 'none');
+        };
+        return {
+          toolName: visible('.nm'),
+          title: visible('.title'),
+          description: visible('.desc'),
+          tick: visible('.tick'),
+          stripe: visible('.stripe'),
+        };
+      });
+      const tabs = await popup.locator('.tabs').evaluate((el) => getComputedStyle(el).display !== 'none');
+      const ring = await popup.locator('.ring').evaluate((el) => getComputedStyle(el).display !== 'none');
+      await popup.close();
+      return { ...shown, tabs, ring };
+    };
+
+    // Instrument leads with the tool name and a risk stripe: built for scanning.
+    expect(await leads('instrument')).toMatchObject({ toolName: true, title: false, tick: false, stripe: true });
+    // Civic leads with plain language and drops the tool name entirely.
+    expect(await leads('civic')).toMatchObject({ title: true, description: true, toolName: false, tick: true });
+    // Native borrows Chrome's furniture: tabs and a ring gauge.
+    expect(await leads('native')).toMatchObject({ tabs: true, ring: true, tick: true });
+    // Ledger sets the title in its display face and shows no checkbox.
+    expect(await leads('ledger')).toMatchObject({ title: true, toolName: false, tick: false });
   });
 });

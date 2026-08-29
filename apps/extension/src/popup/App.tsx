@@ -3,7 +3,7 @@ import { emptyOriginState, isAutoApprovable } from '@reflex/capability-model';
 import type { OriginState, PageSnapshot } from '@reflex/capability-model';
 import { activeTab, ensureInjected, isScannableUrl, sendToTab, type ExtensionMessage } from '../shared/messaging.js';
 import { getSettings, setSettings } from '../shared/storage.js';
-import { DEFAULT_SETTINGS, type ReflexSettings } from '../shared/types.js';
+import { DEFAULT_SETTINGS, type PanelTheme, type PanelMode, type ReflexSettings } from '../shared/types.js';
 import { CandidateList, statusOf } from './CandidateList.js';
 import { CandidateDetail } from './CandidateDetail.js';
 import { Settings } from './Settings.js';
@@ -15,6 +15,14 @@ type View = { screen: 'list' } | { screen: 'detail'; candidateId: string } | { s
  * Explain an empty list in one sentence. A bare "no capabilities" leaves the
  * reviewer wondering whether Reflex failed or the page simply has nothing.
  */
+/** Civic leads with a sentence rather than a number. */
+const readinessSentence = (score: number): string => {
+  if (score >= 85) return 'Most of this page can be used by an agent.';
+  if (score >= 60) return 'Some of this page can be used by an agent.';
+  if (score >= 35) return 'Little of this page can be used by an agent.';
+  return 'An agent can do almost nothing with this page.';
+};
+
 const emptyMessage = (
   counts: PageSnapshot['counts'] | undefined,
   filter: string,
@@ -43,6 +51,7 @@ export const App = () => {
   const [view, setView] = useState<View>({ screen: 'list' });
   const [filter, setFilter] = useState('');
   const [showHeld, setShowHeld] = useState(false);
+  const [statusTab, setStatusTab] = useState<'all' | 'approved' | 'rejected'>('all');
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | undefined>();
 
@@ -64,9 +73,19 @@ export const App = () => {
     [tabId],
   );
 
+  /** The stylesheet keys every look off these two attributes. */
+  const applyTheme = (theme: PanelTheme, mode: PanelMode) => {
+    document.documentElement.dataset.panel = theme;
+    // 'system' stamps nothing, leaving prefers-color-scheme to decide.
+    if (mode === 'system') delete document.documentElement.dataset.mode;
+    else document.documentElement.dataset.mode = mode;
+  };
+
   useEffect(() => {
     void (async () => {
-      setLocalSettings(await getSettings());
+      const loaded = await getSettings();
+      setLocalSettings(loaded);
+      applyTheme(loaded.panelTheme, loaded.panelMode);
 
       // Opening the popup as a tab (?tabId=…) points it at another tab. Useful
       // when developing the UI, and how the e2e tests drive it.
@@ -107,8 +126,14 @@ export const App = () => {
   /** What the list renders: the triaged set, plus held-back rows on request. */
   const listed = useMemo(() => {
     const pool = showHeld ? [...shown, ...held] : shown;
-    return pool.filter((candidate) => matchesFilter(candidate, filter));
-  }, [shown, held, showHeld, filter]);
+    return pool
+      .filter((candidate) => matchesFilter(candidate, filter))
+      .filter((candidate) => {
+        if (statusTab === 'approved') return state.approvedTools.includes(candidate.id);
+        if (statusTab === 'rejected') return state.rejectedTools.includes(candidate.id);
+        return true;
+      });
+  }, [shown, held, showHeld, filter, statusTab, state]);
 
   const selected = useMemo(
     () =>
@@ -123,8 +148,13 @@ export const App = () => {
   ).length;
 
   const updateSettings = async (patch: Partial<ReflexSettings>) => {
-    setLocalSettings(await setSettings(patch));
-    await dispatch({ type: 'RESCAN' }, { quiet: true });
+    const next = await setSettings(patch);
+    setLocalSettings(next);
+    applyTheme(next.panelTheme, next.panelMode);
+    // Only a discovery-affecting change needs a rescan; a repaint does not.
+    if (patch.panelTheme === undefined && patch.panelMode === undefined) {
+      await dispatch({ type: 'RESCAN' }, { quiet: true });
+    }
   };
 
   if (view.screen === 'settings') {
@@ -197,32 +227,73 @@ export const App = () => {
         </div>
       ) : null}
 
+      <div className="tabs">
+        {(
+          [
+            ['all', 'Capabilities'],
+            ['approved', `Active (${state.approvedTools.length})`],
+            ['rejected', 'Rejected'],
+          ] as Array<['all' | 'approved' | 'rejected', string]>
+        ).map(([id, label]) => (
+          <button
+            type="button"
+            key={id}
+            className={statusTab === id ? 'sel' : ''}
+            onClick={() => setStatusTab(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {readiness ? (
         <div className="section">
           <h2>Agent readiness</h2>
           <div className="readiness">
+            <span className="ring" aria-hidden="true">
+              <svg viewBox="0 0 54 54" width="54" height="54">
+                <circle className="ring-track" cx="27" cy="27" r="23" fill="none" strokeWidth="6" />
+                <circle
+                  className="ring-fill"
+                  cx="27"
+                  cy="27"
+                  r="23"
+                  fill="none"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 23}
+                  strokeDashoffset={2 * Math.PI * 23 * (1 - readiness.score / 100)}
+                />
+              </svg>
+              <b>{readiness.score}%</b>
+            </span>
             <span className="score">{readiness.score}%</span>
             <span className="label">
               {readiness.counts.interactiveControls} controls
               {snapshot?.scannedAt ? ` · ${relativeTime(snapshot.scannedAt)}` : ''}
             </span>
+            <span className="say">{readinessSentence(readiness.score)}</span>
           </div>
           <div className="meter">
             <span style={{ width: `${readiness.score}%` }} />
           </div>
           <div className="breakdown">
-            <span className={readiness.breakdown.semanticControls < 0.5 ? 'weak' : ''}>semantic controls</span>
-            <b className={readiness.breakdown.semanticControls < 0.5 ? '' : ''}>
-              {percent(readiness.breakdown.semanticControls)}
-            </b>
-            <span>accessible names</span>
-            <b>{percent(readiness.breakdown.ariaCoverage)}</b>
-            <span className={readiness.breakdown.formQuality === 0 ? 'weak' : ''}>form quality</span>
-            <b className={readiness.breakdown.formQuality === 0 ? 'weak' : ''}>
-              {percent(readiness.breakdown.formQuality)}
-            </b>
-            <span>capability confidence</span>
-            <b>{percent(readiness.breakdown.capabilityConfidence)}</b>
+            {(
+              [
+                ['semantic controls', readiness.breakdown.semanticControls],
+                ['accessible names', readiness.breakdown.ariaCoverage],
+                ['form quality', readiness.breakdown.formQuality],
+                ['capability confidence', readiness.breakdown.capabilityConfidence],
+              ] as Array<[string, number]>
+            ).map(([label, value]) => (
+              <div className={`metric ${value === 0 ? 'weak' : ''}`} key={label}>
+                <span>{label}</span>
+                <span className="mini" aria-hidden="true">
+                  <span style={{ width: `${Math.max(value * 100, value > 0 ? 2 : 0)}%` }} />
+                </span>
+                <b>{percent(value)}</b>
+              </div>
+            ))}
           </div>
         </div>
       ) : null}
@@ -253,8 +324,8 @@ export const App = () => {
               value={filter}
               placeholder={
                 counts.shown > 0
-                  ? `filter ${counts.shown} capabilit${counts.shown === 1 ? 'y' : 'ies'}…`
-                  : 'filter held-back candidates…'
+                  ? `Filter ${counts.shown} capabilit${counts.shown === 1 ? 'y' : 'ies'}…`
+                  : 'Filter held-back candidates…'
               }
               onChange={(event) => setFilter(event.target.value)}
             />
@@ -264,7 +335,7 @@ export const App = () => {
               title="Include the candidates triage held back"
               onClick={() => setShowHeld((value) => !value)}
             >
-              {showHeld ? 'all' : 'strong'}
+              {showHeld ? 'All' : 'Strong'}
             </button>
           </div>
 
@@ -272,7 +343,7 @@ export const App = () => {
             <b>{listed.length}</b> shown of <b>{counts.total}</b> found
             {hiddenTotal > 0 && !showHeld ? (
               <button type="button" onClick={() => setShowHeld(true)}>
-                show {hiddenTotal} held back
+                Show {hiddenTotal} held back
               </button>
             ) : null}
           </p>
@@ -301,7 +372,7 @@ export const App = () => {
               disabled={busy || safeCount === 0}
               onClick={() => void dispatch({ type: 'APPROVE_SAFE_TOOLS' })}
             >
-              {safeCount > 0 ? `enable ${safeCount} read-only` : 'read-only enabled'}
+              {safeCount > 0 ? `Enable ${safeCount} read-only` : 'Read-only enabled'}
             </button>
             <button
               type="button"
@@ -310,7 +381,7 @@ export const App = () => {
               title="Withdraw every registered tool on this site"
               onClick={() => void dispatch({ type: 'DISABLE_ALL_TOOLS' })}
             >
-              withdraw all
+              Withdraw all
             </button>
           </div>
           <p className="foot">

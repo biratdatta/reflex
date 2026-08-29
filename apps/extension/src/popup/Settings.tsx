@@ -1,4 +1,4 @@
-import type { ReflexSettings } from '../shared/types.js';
+import { PANEL_THEMES, type ReflexSettings } from '../shared/types.js';
 
 interface Props {
   settings: ReflexSettings;
@@ -31,8 +31,56 @@ export const Settings = ({ settings, origin, enabled, onChange, onSetEnabled, on
         </span>
       </label>
       <button type="button" className="chip" onClick={onDisableAll}>
-        withdraw all tools on this site
+        Withdraw all tools on this site
       </button>
+    </div>
+
+    <div className="section">
+      <h2>Panel design</h2>
+      <p className="dim" style={{ margin: '0 0 9px', fontSize: 10.5, lineHeight: 1.5 }}>
+        Five directions, all of them real. Which is right depends on who is reviewing: density for an
+        engineer auditing their own app, gravity for someone deciding whether an agent may move money.
+      </p>
+      <div className="modes" role="group" aria-label="Light or dark">
+        {(
+          [
+            ['system', 'System'],
+            ['light', 'Light'],
+            ['dark', 'Dark'],
+          ] as Array<[ReflexSettings['panelMode'], string]>
+        ).map(([id, label]) => (
+          <button
+            type="button"
+            key={id}
+            className={`chip ${settings.panelMode === id ? 'on' : ''}`}
+            onClick={() => onChange({ panelMode: id })}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <p className="dim" style={{ margin: '0 0 10px', fontSize: 10.5, lineHeight: 1.5 }}>
+        Civic is the only design with both. The others are committed looks — inverting them would make
+        them something else.
+      </p>
+
+      <div className="themes">
+        {PANEL_THEMES.map((theme) => (
+          <label key={theme.id} className={settings.panelTheme === theme.id ? 'sel' : ''}>
+            <input
+              type="radio"
+              name="panel-theme"
+              value={theme.id}
+              checked={settings.panelTheme === theme.id}
+              onChange={() => onChange({ panelTheme: theme.id })}
+            />
+            <span>
+              <b>{theme.name}</b>
+              <small>{theme.stance}</small>
+            </span>
+          </label>
+        ))}
+      </div>
     </div>
 
     <div className="section">

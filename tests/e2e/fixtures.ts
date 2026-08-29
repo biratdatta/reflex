@@ -28,6 +28,8 @@ export interface ReflexHarness {
   snapshot: (page: Page) => Promise<PageSnapshot>;
   /** Open the real popup UI in a tab, pointed at `page`. */
   openPopup: (page: Page) => Promise<Page>;
+  /** Switch the panel design, as the settings screen does. */
+  setTheme: (theme: string) => Promise<void>;
   /** Read Reflex's own storage, as only an extension context can. */
   storedOrigins: () => Promise<Record<string, { approvedTools: string[]; rejectedTools: string[] }>>;
   extensionId: string;
@@ -114,7 +116,14 @@ export const test = base.extend<Fixtures>({
       return popup;
     };
 
-    await use({ attach, send, snapshot, storedOrigins, openPopup, extensionId });
+    const setTheme = async (theme: string): Promise<void> => {
+      await extensionPage.evaluate(async (value) => {
+        const stored = (await chrome.storage.local.get('reflex.settings'))['reflex.settings'] ?? {};
+        await chrome.storage.local.set({ 'reflex.settings': { ...stored, panelTheme: value } });
+      }, theme);
+    };
+
+    await use({ attach, send, snapshot, storedOrigins, openPopup, setTheme, extensionId });
     await extensionPage.close();
   },
 });

@@ -58,7 +58,7 @@ export const CandidateDetail = ({
         <span className="brand">REFLEX</span>
         <span className="spacer" />
         <button type="button" className="icon" onClick={onHighlight} title="Flash this element in the page">
-          show on page
+          Show on page
         </button>
       </div>
 
@@ -195,11 +195,11 @@ export const CandidateDetail = ({
 
       <div className="actions">
           <button type="button" className="bad" disabled={busy} onClick={onReject}>
-            reject
+            Reject
           </button>
           {status === 'approved' && !edited ? (
             <button type="button" className="neutral" disabled={busy} onClick={onReset}>
-              disable tool
+              Disable tool
             </button>
           ) : (
             <button
@@ -207,7 +207,7 @@ export const CandidateDetail = ({
               disabled={busy || !name.trim()}
               onClick={() => onApprove({ name: name.trim(), description: description.trim(), risk })}
             >
-              {status === 'approved' ? 'update tool' : 'enable tool'}
+              {status === 'approved' ? 'Update tool' : 'Enable tool'}
             </button>
           )}
       </div>

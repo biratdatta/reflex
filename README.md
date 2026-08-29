@@ -12,7 +12,7 @@ clicking pixels.
 [![License: MIT](https://img.shields.io/badge/License-MIT-6ee7b7?style=flat-square)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](apps/extension/public/manifest.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.base.json)
-[![Tests](https://img.shields.io/badge/tests-181%20unit%20%2B%2019%20e2e-6ee7b7?style=flat-square)](#testing)
+[![Tests](https://img.shields.io/badge/tests-181%20unit%20%2B%2022%20e2e-6ee7b7?style=flat-square)](#testing)
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
@@ -113,7 +113,7 @@ the text of the region the form updates — so a read-only tool returns **data**
 ### 1. Install the extension
 
 **Download:** [latest release](https://github.com/biratdatta/reflex/releases/latest) — or
-[`release/reflex-extension-0.2.0.zip`](release/reflex-extension-0.2.0.zip) from the tree (69 KB)
+[`release/reflex-extension-0.3.0.zip`](release/reflex-extension-0.3.0.zip) from the tree (69 KB)
 
 Unzip it, then:
 
@@ -157,22 +157,22 @@ Open the app and click the Reflex button.
 <table>
 <tr>
 <td width="33%" valign="top">
-<img src="docs/screenshots/popup-capabilities.png" alt="Reflex popup listing discovered capabilities grouped by risk">
+<img src="docs/screenshots/popup-capabilities.png" alt="Reflex reporting 98% agent readiness on the claims service">
 <b>Discover</b><br/>
-98% agent readiness, and eight capabilities on one claim page, grouped read → write → sensitive →
-destructive. Destructive ones are marked 🔒.
+An agent-readiness score in plain words, and how many of the page's candidates are actually worth a
+decision.
+</td>
+<td width="33%" valign="top">
+<img src="docs/screenshots/popup-dark.png" alt="Discovered capabilities grouped by risk, in dark mode">
+<b>Review</b><br/>
+Capabilities grouped read → write → sensitive → destructive, each described in the page's own words.
+Light and dark, following your system.
 </td>
 <td width="33%" valign="top">
 <img src="docs/screenshots/popup-inspector.png" alt="The Reflex inspector showing a generated tool with its evidence and schema">
 <b>Inspect</b><br/>
 The generated name, description, schema and — crucially — the <b>evidence</b>: the exact ARIA
-attributes, form and field labels that produced it. Correct anything that reads wrong.
-</td>
-<td width="33%" valign="top">
-<img src="docs/screenshots/popup-active.png" alt="Reflex popup showing two active tools">
-<b>Agentify</b><br/>
-Approve, and the tool is registered with the page's WebMCP host. The toolbar badge counts what is
-live.
+attributes and labels that produced it. Correct anything that reads wrong.
 </td>
 </tr>
 </table>
@@ -306,6 +306,35 @@ page did not work.
 npm run scan -- https://www.gov.uk/search/all          # read-only: discovers, never calls
 npm run scan -- --threshold 40 --json https://example.com
 ```
+
+---
+
+## The panel
+
+The default design is **Civic** — the language of public-service software: plain words lead, the tool
+name recedes, risk is a solid tag rather than a coloured dot, and the type is heavy enough that
+approving something feels like a decision. That suits what the panel actually is: the thing standing
+between an agent and your account. It ships in **light and dark**, following your system unless you
+choose.
+
+Four other designs are built in, because which one is right depends on who is reviewing — a developer
+auditing their own app wants density; someone deciding whether an agent may move money wants gravity.
+Switch in Settings.
+
+<table>
+<tr>
+<td width="20%"><img src="docs/screenshots/design-civic.png" alt="Civic design"><b>Civic</b><br/><sub>Default. Plain words, heavy type, solid tags. Light and dark.</sub></td>
+<td width="20%"><img src="docs/screenshots/design-instrument.png" alt="Instrument design"><b>Instrument</b><br/><sub>A telemetry readout. Densest; monospace names diff at a glance.</sub></td>
+<td width="20%"><img src="docs/screenshots/design-quiet.png" alt="Quiet Product design"><b>Quiet Product</b><br/><sub>Restrained modern software. Soft cards, one muted accent.</sub></td>
+<td width="20%"><img src="docs/screenshots/design-native.png" alt="Native Chrome design"><b>Native Chrome</b><br/><sub>The browser's own surfaces. Tabs, ring gauge, system type.</sub></td>
+<td width="20%"><img src="docs/screenshots/design-ledger.png" alt="Ledger design"><b>Ledger</b><br/><sub>An audit sheet. Brass on warm black, display numerals.</sub></td>
+</tr>
+</table>
+
+All five share one component tree and one set of decisions: every row renders each design's parts — a
+mono tool name, a human title, a plain-language sentence, a stripe, a tick — and the stylesheet
+decides which are visible. The triage and approval logic cannot drift between designs, and an
+end-to-end test asserts each one still renders the same eight capabilities and still registers a tool.
 
 ---
 
@@ -527,7 +556,7 @@ what `npm run scan` does.
 | `npm run dev:demo` | Serve the demo app on port 3000 |
 | `npm run scan -- <url>` | Point the discovery engine at any live page |
 | `npm test` | 181 unit tests (jsdom) |
-| `npm run test:e2e` | 19 end-to-end tests in a real browser |
+| `npm run test:e2e` | 22 end-to-end tests in a real browser |
 | `npm run typecheck` | Typecheck every workspace |
 
 ---
@@ -571,7 +600,7 @@ uses it and nothing else in the codebase changes.
 
 ```bash
 npm test          # 181 unit tests (jsdom)
-npm run test:e2e  # 19 tests in a real browser, against the built extension
+npm run test:e2e  # 22 tests in a real browser, against the built extension
 ```
 
 Unit tests cover naming, ARIA and label resolution, the full HTML → JSON Schema mapping, ignore rules
@@ -592,29 +621,6 @@ Stable Chrome no longer honours `--load-extension`, so the suite uses Chromium
 built extension with one change — a host permission for `localhost:3000`, standing in for the click
 that would otherwise grant `activeTab` — then injects Reflex exactly as the popup does, drives the
 real popup UI, and calls the registered tools the way a WebMCP client would.
-
----
-
-## Limits, honestly
-
-Reflex discovers agent capabilities in **compatible** web applications. It does not work on every
-website, and accessibility metadata is not the same thing as a WebMCP contract — it is *evidence* for
-one. Generated tools can be wrong, which is why human review is part of the product rather than a
-setting.
-
-**Multi-page applications.** When a tool submits a form that navigates the page, the old document
-takes its registered tools with it. Because Reflex holds no host permissions, the new page starts
-blank until you open Reflex on it again. Single-page applications keep their tools across in-app
-navigation.
-
-**Out of scope in this MVP:** network/API inference, OpenAPI or GraphQL discovery, framework state
-reverse-engineering, multi-page workflow recording, canvas applications, cross-origin iframes, and
-sites with deliberate anti-automation controls.
-
-**Possible next steps:** teach mode (record a workflow, propose a higher-level capability),
-network correlation (observe the `POST` behind a click and execute against it instead of the DOM), a
-capability graph that lifts UI operations into domain capabilities, and optional LLM assistance for
-naming ambiguous candidates — suggesting metadata only, never controlling execution.
 
 ---
 
