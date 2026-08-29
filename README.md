@@ -28,22 +28,19 @@ clicking pixels.
 
 ---
 
-## The 47-second version
+## Watch it work
 
-[![Reflex demo](docs/screenshots/demo-video-poster.png)](docs/reflex-demo-silent.mp4)
+![An agent calling a Reflex-generated tool on a government claims service: the service&#39;s own form is filled and submitted, and a destructive tool stops to ask a human first](docs/reflex-demo.gif)
 
-**[▶ Watch the demo](docs/reflex-demo-silent.mp4)** — 47 seconds, recorded from the built extension
-against the running demo service. The on-screen captions carry the commentary, so it needs no sound.
-A narrated cut of the same footage, and WebM versions of both, are attached to
-[the release](https://github.com/biratdatta/reflex/releases/latest).
+The middle 26 seconds, looping: an agent calls `search_claims({"query": "Okonkwo"})` and the
+service's *own* form is filled and submitted — driven, not bypassed — then a destructive tool is
+called and stops to ask a human, who declines, and the claim is left untouched.
 
-A government claims service with no WebMCP and no agent hooks. Reflex reads it, proposes tools, a
-human approves two, an agent calls `search_claims({"query": "Okonkwo"})` — and the service's own form
-is filled and submitted, not bypassed. Then a destructive tool is called, and Chrome asks a human
-first.
-
-The narrated cut on the release uses macOS text-to-speech and synthesised interface tones, so nothing
-in its soundtrack needs a licence.
+**[▶ The whole 47 seconds](docs/reflex-demo-silent.mp4)** adds the discovery and approval steps at
+the start. A narrated cut, and WebM versions of both, are attached to
+[the release](https://github.com/biratdatta/reflex/releases/latest) — its voiceover is macOS
+text-to-speech and its interface cues are synthesised tones, so nothing in the soundtrack needs a
+licence.
 
 ---
 
