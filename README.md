@@ -16,6 +16,7 @@ clicking pixels.
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
+[**Watch the 39s demo**](docs/reflex-demo.webm) ·
 [Quick start](#quick-start) ·
 [How it works](#how-it-works) ·
 [On real websites](#on-real-websites) ·
@@ -24,6 +25,21 @@ clicking pixels.
 <img src="docs/screenshots/demo-tool-call.png" alt="An agent calling a Reflex-generated tool on a government claims service; the service's own UI responds" width="880">
 
 </div>
+
+---
+
+## The 39-second version
+
+[![Reflex demo](docs/screenshots/demo-video-poster.png)](docs/reflex-demo.webm)
+
+**[▶ Watch the demo](docs/reflex-demo.webm)** — 39 seconds, silent, recorded from the built
+extension against the running demo service (also attached to
+[the release](https://github.com/biratdatta/reflex/releases/latest)).
+
+A government claims service with no WebMCP and no agent hooks. Reflex reads it, proposes tools, a
+human approves two, an agent calls `search_claims({"query": "Okonkwo"})` — and the service's own form
+is filled and submitted, not bypassed. Then a destructive tool is called, and Chrome asks a human
+first.
 
 ---
 
@@ -113,7 +129,7 @@ the text of the region the form updates — so a read-only tool returns **data**
 ### 1. Install the extension
 
 **Download:** [latest release](https://github.com/biratdatta/reflex/releases/latest) — or
-[`release/reflex-extension-0.3.0.zip`](release/reflex-extension-0.3.0.zip) from the tree (69 KB)
+[`release/reflex-extension-0.3.0.zip`](release/reflex-extension-0.3.0.zip) from the tree (76 KB)
 
 Unzip it, then:
 
@@ -335,6 +351,19 @@ All five share one component tree and one set of decisions: every row renders ea
 mono tool name, a human title, a plain-language sentence, a stripe, a tick — and the stylesheet
 decides which are visible. The triage and approval logic cannot drift between designs, and an
 end-to-end test asserts each one still renders the same eight capabilities and still registers a tool.
+
+### Settings
+
+| Setting | Default | What it controls |
+| --- | --- | --- |
+| Panel design | Civic | Which of the five looks the panel wears |
+| Light / dark | System | Civic's two modes; the other four are single-look by design |
+| Reflex enabled here | On | Per origin. Turning it off withdraws every registered tool at once |
+| Confirm destructive calls | On | Asks in the page before a destructive tool actuates, every time |
+| Rescan when the page changes | On | Keeps the list in step with what is on screen |
+| Minimum confidence | 50% | The floor before triage, which then judges forms at 50% and buttons at 70% |
+| Provide a local WebMCP host | On | Registers tools even where the browser exposes no host |
+| Show the in-page tool console | On | The stand-in WebMCP client used for demos |
 
 ---
 
