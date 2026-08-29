@@ -16,7 +16,7 @@ clicking pixels.
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
-[**Watch the 47s demo**](docs/reflex-demo-narrated.mp4) ·
+[**Watch the 47s demo**](docs/reflex-demo-silent.mp4) ·
 [Quick start](#quick-start) ·
 [How it works](#how-it-works) ·
 [On real websites](#on-real-websites) ·
@@ -30,21 +30,20 @@ clicking pixels.
 
 ## The 47-second version
 
-[![Reflex demo](docs/screenshots/demo-video-poster.png)](docs/reflex-demo-narrated.mp4)
+[![Reflex demo](docs/screenshots/demo-video-poster.png)](docs/reflex-demo-silent.mp4)
 
-**[▶ Watch the demo](docs/reflex-demo-narrated.mp4)** — 47 seconds, narrated, recorded from the built
-extension against the running demo service. Prefer it quiet? The same cut without the voiceover is
-[**here**](docs/reflex-demo-silent.mp4) — the on-screen captions carry the commentary either way.
-Both are attached to [the release](https://github.com/biratdatta/reflex/releases/latest), in MP4 and
-WebM.
+**[▶ Watch the demo](docs/reflex-demo-silent.mp4)** — 47 seconds, recorded from the built extension
+against the running demo service. The on-screen captions carry the commentary, so it needs no sound.
+A narrated cut of the same footage, and WebM versions of both, are attached to
+[the release](https://github.com/biratdatta/reflex/releases/latest).
 
 A government claims service with no WebMCP and no agent hooks. Reflex reads it, proposes tools, a
 human approves two, an agent calls `search_claims({"query": "Okonkwo"})` — and the service's own form
 is filled and submitted, not bypassed. Then a destructive tool is called, and Chrome asks a human
 first.
 
-The voiceover is macOS text-to-speech and the three interface cues are synthesised tones, so nothing
-in the soundtrack needs a licence.
+The narrated cut on the release uses macOS text-to-speech and synthesised interface tones, so nothing
+in its soundtrack needs a licence.
 
 ---
 
