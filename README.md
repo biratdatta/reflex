@@ -16,7 +16,7 @@ clicking pixels.
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
-[**Watch the 39s demo**](docs/reflex-demo.webm) ·
+[**Watch the 47s demo**](docs/reflex-demo.mp4) ·
 [Quick start](#quick-start) ·
 [How it works](#how-it-works) ·
 [On real websites](#on-real-websites) ·
@@ -28,18 +28,22 @@ clicking pixels.
 
 ---
 
-## The 39-second version
+## The 47-second version
 
-[![Reflex demo](docs/screenshots/demo-video-poster.png)](docs/reflex-demo.webm)
+[![Reflex demo](docs/screenshots/demo-video-poster.png)](docs/reflex-demo.mp4)
 
-**[▶ Watch the demo](docs/reflex-demo.webm)** — 39 seconds, silent, recorded from the built
+**[▶ Watch the demo](docs/reflex-demo.mp4)** — 47 seconds, narrated, recorded from the built
 extension against the running demo service (also attached to
-[the release](https://github.com/biratdatta/reflex/releases/latest)).
+[the release](https://github.com/biratdatta/reflex/releases/latest), where a WebM cut sits alongside
+it).
 
 A government claims service with no WebMCP and no agent hooks. Reflex reads it, proposes tools, a
 human approves two, an agent calls `search_claims({"query": "Okonkwo"})` — and the service's own form
 is filled and submitted, not bypassed. Then a destructive tool is called, and Chrome asks a human
 first.
+
+The voiceover is macOS text-to-speech and the three interface cues are synthesised tones, so nothing
+in the soundtrack needs a licence.
 
 ---
 
