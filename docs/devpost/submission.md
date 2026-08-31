@@ -29,6 +29,7 @@ vite, vitest, playwright, json-schema, aria, html, css, node.js, github-actions,
 | Product page | https://reflex-three-cyan.vercel.app |
 | Source code | https://github.com/biratdatta/reflex |
 | Install (latest release) | https://github.com/biratdatta/reflex/releases/latest |
+| Demo video | https://youtu.be/QjSB0LTPJVI |
 
 ## Image gallery, in order
 
@@ -42,24 +43,15 @@ vite, vitest, playwright, json-schema, aria, html, css, node.js, github-actions,
 
 ## Video
 
-Upload `../reflex-demo-silent.mp4` (or the narrated cut from the
-[release](https://github.com/biratdatta/reflex/releases/latest)) to YouTube and paste the link —
-Devpost's video field accepts YouTube or Vimeo URLs only, not a file.
-
-Suggested title and description:
+Paste this into the submission's video field:
 
 ```
-Reflex — turning a government service into WebMCP tools in 47 seconds
+https://youtu.be/QjSB0LTPJVI
 ```
 
-```
-Reflex is a Chrome extension that reads a website's existing forms and accessibility metadata,
-proposes WebMCP tools from what it finds, and registers the ones a human approves. Here it runs
-against a fictional government claims service: discovery, approval, an agent calling
-search_claims through document.modelContext, and a destructive tool stopping to ask a human.
-
-Source: https://github.com/biratdatta/reflex
-```
+Title as published: *Reflex — Agentify the web you already use | WebMCP tools from any existing
+website*. Subtitles: `reflex-demo.en.srt`. Covers: `thumbnail.png`,
+`thumbnail-b-forms-are-an-api.png`, `thumbnail-c-nothing-worth-reviewing.png`.
 
 ## The WebMCP API used
 

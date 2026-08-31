@@ -17,6 +17,7 @@ clicking pixels.
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
 [**reflex-three-cyan.vercel.app**](https://reflex-three-cyan.vercel.app) ·
+[**Watch the demo**](https://youtu.be/QjSB0LTPJVI) ·
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
 [**Watch the 47s demo**](docs/reflex-demo-silent.mp4) ·
 [Quick start](#quick-start) ·
@@ -38,8 +39,9 @@ The middle 26 seconds, looping: an agent calls `search_claims({"query": "Okonkwo
 service's *own* form is filled and submitted — driven, not bypassed — then a destructive tool is
 called and stops to ask a human, who declines, and the claim is left untouched.
 
-**[▶ The whole 47 seconds](docs/reflex-demo-silent.mp4)** adds the discovery and approval steps at
-the start. A narrated cut, and WebM versions of both, are attached to
+**[▶ Watch the full 47 seconds on YouTube](https://youtu.be/QjSB0LTPJVI)** — narrated, with the discovery and approval
+steps at the start. A [silent MP4](docs/reflex-demo-silent.mp4) is in the repository if you would
+rather not leave it. A narrated cut, and WebM versions of both, are attached to
 [the release](https://github.com/biratdatta/reflex/releases/latest) — its voiceover is macOS
 text-to-speech and its interface cues are synthesised tones, so nothing in the soundtrack needs a
 licence.
@@ -597,6 +599,7 @@ promptly with `observed.navigating: true` instead of waiting for a result it cou
 | Tests | `npm test` (183, jsdom) · `npm run test:e2e` (25, real browser) · [CI](https://github.com/biratdatta/reflex/actions/workflows/ci.yml) on every push |
 | License | [MIT](LICENSE) |
 | Project story | [docs/project-story.md](docs/project-story.md) |
+| Demo video | [youtu.be/QjSB0LTPJVI](https://youtu.be/QjSB0LTPJVI) |
 
 ---
 
