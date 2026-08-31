@@ -12,7 +12,7 @@ clicking pixels.
 [![License: MIT](https://img.shields.io/badge/License-MIT-6ee7b7?style=flat-square)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](apps/extension/public/manifest.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.base.json)
-[![Tests](https://img.shields.io/badge/tests-181%20unit%20%2B%2025%20e2e-6ee7b7?style=flat-square)](#testing)
+[![Tests](https://img.shields.io/badge/tests-183%20unit%20%2B%2025%20e2e-6ee7b7?style=flat-square)](#testing)
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
@@ -125,12 +125,49 @@ the text of the region the form updates — so a read-only tool returns **data**
 
 ---
 
+## The WebMCP surface
+
+Every approved capability is registered through WebMCP's `registerTool`, in exactly the shape the API
+documents:
+
+```js
+document.modelContext.registerTool({
+  name: "search_claims",
+  description: "Find a claim by reference number, claimant name or policy number.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: { type: "string", maxLength: 60, description: "For example CLM-2026-0481" }
+    },
+    required: ["query"],
+    additionalProperties: false
+  },
+  annotations: { readOnlyHint: true, destructiveHint: false },
+  execute: async (input) => executeCandidate(document, candidate, input)
+});
+```
+
+The point of the project is that **Reflex writes that object for you**, from markup the page already
+had: `name` and `description` from `aria-label` and `aria-description`, `inputSchema` from the form's
+own controls and their labels, `annotations` from keyword risk classification, and `execute` from a
+stable selector plus a semantic fingerprint that is re-verified before anything actuates.
+
+One indirection is deliberate. [`packages/webmcp-adapter/src/adapter.ts`](packages/webmcp-adapter/src/adapter.ts)
+is the only file in the codebase that touches `modelContext`, because WebMCP is experimental and its
+surface is still moving. It probes `navigator.modelContext`, then `document.modelContext`, supports
+both `registerTool` and `provideContext` host styles — and when the browser offers neither, installs a
+local host under **both** names, so a client written against either spelling finds it. Registration,
+execution and withdrawal all go through that one interface; when a browser ships a native host, it is
+used and nothing else changes.
+
+---
+
 ## Quick start
 
 ### 1. Install the extension
 
 **Download:** [latest release](https://github.com/biratdatta/reflex/releases/latest) — or
-[`release/reflex-extension-0.4.0.zip`](release/reflex-extension-0.4.0.zip) from the tree (76 KB)
+[`release/reflex-extension-0.4.1.zip`](release/reflex-extension-0.4.1.zip) from the tree (76 KB)
 
 Unzip it, then:
 
@@ -588,7 +625,7 @@ what `npm run scan` does.
 | `npm run dev:demo` | Serve the demo app on port 3000 |
 | `npm run dev:landing` | Serve the product landing page locally |
 | `npm run scan -- <url>` | Point the discovery engine at any live page |
-| `npm test` | 181 unit tests (jsdom) |
+| `npm test` | 183 unit tests (jsdom) |
 | `npm run test:e2e` | 25 end-to-end tests in a real browser |
 | `npm run typecheck` | Typecheck every workspace |
 
@@ -633,7 +670,7 @@ uses it and nothing else in the codebase changes.
 ## Testing
 
 ```bash
-npm test          # 181 unit tests (jsdom)
+npm test          # 183 unit tests (jsdom)
 npm run test:e2e  # 25 tests in a real browser, against the built extension
 ```
 

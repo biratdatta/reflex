@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Reflex",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Agentify the web you already use. Reflex discovers agent capabilities in compatible web applications and exposes approved ones as WebMCP tools.",
   "action": {
     "default_popup": "src/popup/index.html",

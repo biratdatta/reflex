@@ -61,13 +61,43 @@ describe('findNativeHost', () => {
 
 describe('WebMCPAdapter with no browser host', () => {
   beforeEach(() => {
+    // Reflex installs its shim on both surfaces, so both must be cleared.
     delete (window.navigator as { modelContext?: unknown }).modelContext;
+    delete (window.document as { modelContext?: unknown }).modelContext;
   });
 
   it('reports unavailable when shimming is switched off', () => {
     const adapter = new WebMCPAdapter(window, { installShim: false });
     expect(adapter.available()).toBe(false);
     expect(adapter.flavor()).toBe('none');
+  });
+
+  it('exposes the shim as both document.modelContext and navigator.modelContext', () => {
+    delete (window.navigator as { modelContext?: unknown }).modelContext;
+    delete (window.document as { modelContext?: unknown }).modelContext;
+    const adapter = new WebMCPAdapter(window);
+    expect(adapter.available()).toBe(true);
+
+    // The canonical WebMCP example calls document.modelContext.registerTool(...);
+    // the prototypes we have seen use navigator. Both must find the same host.
+    const viaDocument = (window.document as unknown as { modelContext: ReflexShimHost }).modelContext;
+    const viaNavigator = (window.navigator as unknown as { modelContext: ReflexShimHost }).modelContext;
+    expect(viaDocument).toBe(viaNavigator);
+    expect(typeof viaDocument.registerTool).toBe('function');
+  });
+
+  it('registers through document.modelContext.registerTool, the documented surface', async () => {
+    delete (window.navigator as { modelContext?: unknown }).modelContext;
+    delete (window.document as { modelContext?: unknown }).modelContext;
+    const adapter = new WebMCPAdapter(window);
+    const search = candidateFrom(SEARCH);
+    await adapter.register(search, noop);
+
+    const host = (window.document as unknown as { modelContext: ReflexShimHost }).modelContext;
+    const [tool] = host.listTools();
+    expect(tool).toMatchObject({ name: 'search_employees', description: 'Find an employee by name or email.' });
+    expect(typeof tool.execute).toBe('function');
+    expect(tool.inputSchema.properties.query).toBeDefined();
   });
 
   it('installs the shim, clearly marked as not native', () => {
@@ -87,6 +117,7 @@ describe('WebMCPAdapter with no browser host', () => {
 describe('WebMCPAdapter registration', () => {
   beforeEach(() => {
     delete (window.navigator as { modelContext?: unknown }).modelContext;
+    delete (window.document as { modelContext?: unknown }).modelContext;
   });
 
   it('registers a candidate as a tool with risk-derived annotations', async () => {
@@ -169,6 +200,7 @@ describe('WebMCPAdapter registration', () => {
 
 describe('WebMCPAdapter against a provideContext-only host', () => {
   it('re-provides the whole tool list on every change', async () => {
+    delete (window.document as { modelContext?: unknown }).modelContext;
     const host = new ProvideOnlyHost();
     Object.defineProperty(window.navigator, 'modelContext', { value: host, configurable: true });
     const adapter = new WebMCPAdapter(window);

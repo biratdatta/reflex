@@ -13,13 +13,23 @@ const asHost = (value: unknown): ModelContextHost | null => {
   return typeof host.registerTool === 'function' || typeof host.provideContext === 'function' ? host : null;
 };
 
-/** Probe the surfaces WebMCP prototypes have used, in order of preference. */
+/**
+ * Probe the surfaces WebMCP prototypes have used, in order of preference.
+ *
+ * A host Reflex installed itself is reported as `reflex-shim`, never as native:
+ * once the shim is in place a naive probe would find it again and the panel would
+ * claim the browser ships WebMCP when it does not.
+ */
 export const findNativeHost = (win: Window & typeof globalThis): HostLookup | null => {
   const navigatorHost = asHost((win.navigator as unknown as { modelContext?: unknown })?.modelContext);
-  if (navigatorHost) return { host: navigatorHost, flavor: 'navigator.modelContext' };
+  if (navigatorHost) {
+    return { host: navigatorHost, flavor: navigatorHost.__reflexShim ? 'reflex-shim' : 'navigator.modelContext' };
+  }
 
   const documentHost = asHost((win.document as unknown as { modelContext?: unknown })?.modelContext);
-  if (documentHost) return { host: documentHost, flavor: 'document.modelContext' };
+  if (documentHost) {
+    return { host: documentHost, flavor: documentHost.__reflexShim ? 'reflex-shim' : 'document.modelContext' };
+  }
 
   return null;
 };
@@ -46,23 +56,34 @@ export class WebMCPAdapter implements MCPAdapter {
   private resolveHost(): HostLookup | null {
     if (this.lookup) return this.lookup;
 
-    const native = findNativeHost(this.win);
-    if (native) {
-      this.lookup = native;
-      return native;
+    const found = findNativeHost(this.win);
+    if (found && (found.flavor !== 'reflex-shim' || this.options.installShim !== false)) {
+      this.lookup = found;
+      return found;
     }
+    // A leftover shim with shimming switched off is not a host we may use.
+    if (found) return null;
 
     if (this.options.installShim === false) return null;
 
     const shim = new ReflexShimHost();
-    try {
-      Object.defineProperty(this.win.navigator, 'modelContext', {
-        value: shim,
-        configurable: true,
-        writable: true,
-      });
-    } catch {
-      // Some environments refuse to extend navigator; the shim still works via the alias below.
+
+    /**
+     * Published WebMCP examples reach the host as `document.modelContext`, while
+     * the prototypes we have seen expose `navigator.modelContext`. When Reflex is
+     * providing the host itself, both names point at the same object, so a client
+     * written against either spelling finds it.
+     */
+    for (const target of [this.win.navigator, this.win.document] as unknown as object[]) {
+      try {
+        Object.defineProperty(target, 'modelContext', {
+          value: shim,
+          configurable: true,
+          writable: true,
+        });
+      } catch {
+        // Some environments refuse to extend these; the alias below still works.
+      }
     }
     Object.defineProperty(this.win, '__reflexModelContext', {
       value: shim,
