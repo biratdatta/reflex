@@ -3,6 +3,20 @@
   "private": true,
   "version": "0.4.1",
   "description": "Reflex \u2014 a compatibility layer for the agentic web. Discovers WebMCP tools from existing website semantics.",
+  "keywords": [
+    "webmcp",
+    "model-context-protocol",
+    "mcp",
+    "chrome-extension",
+    "browser-extension",
+    "ai-agents",
+    "agentic-web",
+    "accessibility",
+    "aria",
+    "manifest-v3",
+    "json-schema"
+  ],
+  "homepage": "https://reflex-three-cyan.vercel.app",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -38,5 +52,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/biratdatta/reflex.git"
+  },
+  "engines": {
+    "node": ">=18.18"
   }
 }

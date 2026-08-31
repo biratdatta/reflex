@@ -15,6 +15,7 @@ clicking pixels.
 [![Tests](https://img.shields.io/badge/tests-183%20unit%20%2B%2025%20e2e-6ee7b7?style=flat-square)](#testing)
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
+[**reflex-three-cyan.vercel.app**](https://reflex-three-cyan.vercel.app) ·
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
 [**Watch the 47s demo**](docs/reflex-demo-silent.mp4) ·
 [Quick start](#quick-start) ·
@@ -580,6 +581,20 @@ Values are set through native property setters followed by `input` and `change` 
 frameworks notice the change; submission prefers `form.requestSubmit()` so the page's own validation
 and handlers run. On multi-page apps, execution detects the page starting to navigate and returns
 promptly with `observed.navigating: true` instead of waiting for a result it could never read.
+
+---
+
+## At a glance
+
+| | |
+| --- | --- |
+| Product page | [reflex-three-cyan.vercel.app](https://reflex-three-cyan.vercel.app) |
+| Install | [latest release](https://github.com/biratdatta/reflex/releases/latest) → unzip → `chrome://extensions` → Load unpacked |
+| Build from source | `npm install && npm run build:extension` (Node ≥ 18.18) |
+| Demo service | `npm run dev:demo` → <http://localhost:3000/claims> |
+| WebMCP API used | `document.modelContext.registerTool({ name, description, inputSchema, execute })` — see [The WebMCP surface](#the-webmcp-surface) |
+| Tests | `npm test` (183, jsdom) · `npm run test:e2e` (25, real browser) |
+| License | [MIT](LICENSE) |
 
 ---
 
