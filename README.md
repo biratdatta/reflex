@@ -596,6 +596,7 @@ promptly with `observed.navigating: true` instead of waiting for a result it cou
 | WebMCP API used | `document.modelContext.registerTool({ name, description, inputSchema, execute })` — see [The WebMCP surface](#the-webmcp-surface) |
 | Tests | `npm test` (183, jsdom) · `npm run test:e2e` (25, real browser) · [CI](https://github.com/biratdatta/reflex/actions/workflows/ci.yml) on every push |
 | License | [MIT](LICENSE) |
+| Project story | [docs/project-story.md](docs/project-story.md) |
 
 ---
 
