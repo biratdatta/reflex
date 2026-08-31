@@ -565,6 +565,7 @@ reflex/
 │   │                           selectors + fingerprints, readiness
 │   ├── schema-generator/       HTML form controls → JSON Schema
 │   └── webmcp-adapter/         the only code touching modelContext, + executor
+├── apps/landing/               product page (static, deployed to Vercel)
 ├── tools/
 │   ├── scan-site.mjs           run the engine against any live URL (read-only)
 │   └── package-extension.mjs   build the loadable zip
@@ -585,6 +586,7 @@ what `npm run scan` does.
 | `npm run build:extension` | Build into `apps/extension/dist` (load this unpacked) |
 | `npm run package` | Build and zip into `release/` |
 | `npm run dev:demo` | Serve the demo app on port 3000 |
+| `npm run dev:landing` | Serve the product landing page locally |
 | `npm run scan -- <url>` | Point the discovery engine at any live page |
 | `npm test` | 181 unit tests (jsdom) |
 | `npm run test:e2e` | 25 end-to-end tests in a real browser |

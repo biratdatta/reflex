@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "dev:demo": "npm run dev -w @reflex/demo-legacy-app",
+    "dev:landing": "npx serve apps/landing",
     "dev:extension": "npm run dev -w @reflex/extension",
     "build": "npm run build -w @reflex/extension && npm run build -w @reflex/demo-legacy-app",
     "build:extension": "npm run build -w @reflex/extension",
