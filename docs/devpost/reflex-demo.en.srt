@@ -1,0 +1,38 @@
+1
+00:00:01,090 --> 00:00:07,960
+This is a government claims service. No
+WebMCP, no agent hooks — just well marked
+up HTML.
+
+2
+00:00:08,660 --> 00:00:14,200
+Reflex reads the page and proposes tools.
+Nothing is registered until a human
+approves it.
+
+3
+00:00:14,910 --> 00:00:20,740
+Two read-only capabilities, approved. They
+are now real WebMCP tools on this page.
+
+4
+00:00:21,450 --> 00:00:28,920
+An agent calls search claims with a
+claimant's name. The service's own form is
+filled and submitted. Driven, not
+
+5
+00:00:29,620 --> 00:00:33,780
+The claim comes back, and the tool returns
+the text the page then showed.
+
+6
+00:00:37,140 --> 00:00:43,080
+Destructive tools are different. Reflex
+asks a human, in the page, on every single
+call.
+
+7
+00:00:43,780 --> 00:00:47,310
+Dismissed, so nothing happened. The claim
+is untouched.
