@@ -4,13 +4,28 @@ interface Props {
   settings: ReflexSettings;
   origin: string;
   enabled: boolean;
+  /** Whether Reflex re-attaches to this site on its own after a reload. */
+  persistent: boolean;
+  persistenceBusy?: boolean;
+  onSetPersistent: (persistent: boolean) => void;
   onChange: (patch: Partial<ReflexSettings>) => void;
   onSetEnabled: (enabled: boolean) => void;
   onDisableAll: () => void;
   onBack: () => void;
 }
 
-export const Settings = ({ settings, origin, enabled, onChange, onSetEnabled, onDisableAll, onBack }: Props) => (
+export const Settings = ({
+  settings,
+  origin,
+  enabled,
+  persistent,
+  persistenceBusy,
+  onChange,
+  onSetEnabled,
+  onSetPersistent,
+  onDisableAll,
+  onBack,
+}: Props) => (
   <>
     <div className="topbar">
       <button type="button" className="icon" onClick={onBack} title="Back">
@@ -28,6 +43,24 @@ export const Settings = ({ settings, origin, enabled, onChange, onSetEnabled, on
         <span>
           Reflex enabled here
           <small>Turning this off withdraws every registered tool immediately.</small>
+        </span>
+      </label>
+      <label className="toggle">
+        <input
+          type="checkbox"
+          checked={persistent}
+          disabled={persistenceBusy}
+          onChange={(event) => onSetPersistent(event.target.checked)}
+        />
+        <span>
+          Stay attached after a reload
+          <small>
+            Without this, Reflex only reads a page while you have it open, so refreshing takes the
+            registered tools with it and you reopen this panel to bring them back. Your approvals are
+            never lost either way — they are stored per site. Turning this on asks Chrome for
+            permission to <b>{origin}</b>, and only that site, so approved tools come back on their
+            own.
+          </small>
         </span>
       </label>
       <button type="button" className="chip" onClick={onDisableAll}>

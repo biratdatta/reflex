@@ -4,6 +4,8 @@
  * live on the active tab) and clear it as tabs change.
  */
 
+import { reconcilePersistence } from '../shared/persistence.js';
+
 const BADGE_BACKGROUND = '#1f6f4f';
 
 const paint = async (tabId: number, count: number): Promise<void> => {
@@ -26,7 +28,16 @@ chrome.runtime.onMessage.addListener((message: { type?: string; count?: number }
   return true;
 });
 
-// A navigation drops every registered tool, so the badge must not linger.
+// A navigation drops every registered tool, so the badge must not linger. Where
+// the user has granted the site, the content script re-attaches on its own and
+// repaints the badge a moment later.
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === 'loading') void paint(tabId, 0);
 });
+
+// Keep the automatic attachments in step with the permissions actually held —
+// including ones revoked from Chrome's own settings page.
+chrome.runtime.onInstalled.addListener(() => void reconcilePersistence());
+chrome.runtime.onStartup.addListener(() => void reconcilePersistence());
+chrome.permissions.onRemoved.addListener(() => void reconcilePersistence());
+chrome.permissions.onAdded.addListener(() => void reconcilePersistence());

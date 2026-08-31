@@ -289,3 +289,100 @@ test.describe('Reflex on the National Claims Portal', () => {
     await expect(page.locator('#claim-record')).toContainText('Awaiting documents');
   });
 });
+
+/**
+ * The refresh problem: `activeTab` is revoked on navigation, so by default the
+ * injected runtime dies with the old document and approved tools do not come
+ * back until the panel is opened again. Approvals themselves are never lost —
+ * they are stored per origin — so this is about re-attaching, not re-deciding.
+ */
+test.describe('surviving a reload', () => {
+  test('by default the runtime goes, but the approval stays', async ({ context, reflex }) => {
+    // The fixture's extension declares the origin so it can inject at all, and
+    // the service worker reconciles that into an automatic attachment. Opt out
+    // first, so this test models a site the user has *not* granted.
+    await reflex.disablePersistence('http://localhost:3000');
+
+    const page = await context.newPage();
+    await page.goto('/claims');
+    await reflex.attach(page);
+
+    const snapshot = await reflex.snapshot(page);
+    await reflex.send(page, {
+      type: 'APPROVE_CANDIDATE',
+      candidateId: byName(snapshot.candidates, 'search_claims').id,
+    });
+    expect(await page.evaluate(() => navigator.modelContext!.listTools!().length)).toBe(1);
+
+    await page.reload();
+    await page.waitForTimeout(1200);
+
+    // Nothing is attached, so the page has no Reflex host at all.
+    expect(await page.evaluate(() => Boolean(navigator.modelContext))).toBe(false);
+    await expect(page.locator('#reflex-agent-console')).toHaveCount(0);
+
+    // But the decision survived: re-attaching restores the tool with no re-approval.
+    await reflex.attach(page);
+    await expect
+      .poll(async () => page.evaluate(() => navigator.modelContext?.listTools?.().map((t) => t.name) ?? []))
+      .toEqual(['search_claims']);
+  });
+
+  test('a site granted permission re-attaches on its own', async ({ context, reflex }) => {
+    const page = await context.newPage();
+    await page.goto('/claims');
+    await reflex.attach(page);
+
+    const snapshot = await reflex.snapshot(page);
+    await reflex.send(page, {
+      type: 'APPROVE_CANDIDATE',
+      candidateId: byName(snapshot.candidates, 'search_claims').id,
+    });
+
+    // What the settings toggle does once Chrome has granted the origin.
+    await reflex.enablePersistence('http://localhost:3000');
+
+    await page.reload();
+    await page.waitForTimeout(2500);
+
+    // No click, no popup: the tool is registered and callable again.
+    await expect
+      .poll(
+        async () => page.evaluate(() => navigator.modelContext?.listTools?.().map((t) => t.name) ?? []),
+        { timeout: 15_000 },
+      )
+      .toEqual(['search_claims']);
+
+    const result = await page.evaluate(async () => {
+      const response = await navigator.modelContext!.callTool!('search_claims', { query: 'Okonkwo' });
+      return JSON.parse(response.content[0]!.text) as { success: boolean };
+    });
+    expect(result.success).toBe(true);
+    await expect(page.locator('#service-status')).toContainText('returned 1 claim');
+
+    // And it survives a second reload, not just the first.
+    await page.reload();
+    await page.waitForTimeout(2500);
+    await expect
+      .poll(
+        async () => page.evaluate(() => navigator.modelContext?.listTools?.().length ?? 0),
+        { timeout: 15_000 },
+      )
+      .toBe(1);
+  });
+
+  test('withdrawing the site stops it attaching', async ({ context, reflex }) => {
+    const page = await context.newPage();
+    await page.goto('/claims');
+    await reflex.attach(page);
+    await reflex.enablePersistence('http://localhost:3000');
+    await page.reload();
+    await page.waitForTimeout(2200);
+    expect(await page.evaluate(() => Boolean(navigator.modelContext))).toBe(true);
+
+    await reflex.disablePersistence('http://localhost:3000');
+    await page.reload();
+    await page.waitForTimeout(2200);
+    expect(await page.evaluate(() => Boolean(navigator.modelContext))).toBe(false);
+  });
+});

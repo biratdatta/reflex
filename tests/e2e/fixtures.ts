@@ -30,6 +30,9 @@ export interface ReflexHarness {
   openPopup: (page: Page) => Promise<Page>;
   /** Switch the panel design, as the settings screen does. */
   setTheme: (theme: string) => Promise<void>;
+  /** Register the dynamic content scripts for an origin, as the settings toggle does. */
+  enablePersistence: (origin: string) => Promise<void>;
+  disablePersistence: (origin: string) => Promise<void>;
   /** Read Reflex's own storage, as only an extension context can. */
   storedOrigins: () => Promise<Record<string, { approvedTools: string[]; rejectedTools: string[] }>>;
   extensionId: string;
@@ -123,7 +126,62 @@ export const test = base.extend<Fixtures>({
       }, theme);
     };
 
-    await use({ attach, send, snapshot, storedOrigins, openPopup, setTheme, extensionId });
+    /**
+     * The settings toggle calls chrome.permissions.request(), which raises a
+     * native prompt no test can click. The fixture's extension already holds the
+     * origin, so these drive the half that follows the grant.
+     */
+    const enablePersistence = async (origin: string): Promise<void> => {
+      await extensionPage.evaluate(async (target) => {
+        const key = target.replace(/[^a-zA-Z0-9]/g, '_');
+        // Idempotent, like the real registerScripts: the service worker may have
+        // registered this origin already when it reconciled on install.
+        const ids = [`reflex_page_${key}`, `reflex_content_${key}`];
+        const existing = await chrome.scripting.getRegisteredContentScripts({ ids });
+        if (existing.length) await chrome.scripting.unregisterContentScripts({ ids: existing.map((s) => s.id) });
+        await chrome.scripting.registerContentScripts([
+          {
+            id: `reflex_page_${key}`,
+            matches: [`${target}/*`],
+            js: ['page.js'],
+            world: 'MAIN',
+            runAt: 'document_idle',
+            allFrames: false,
+            persistAcrossSessions: true,
+          },
+          {
+            id: `reflex_content_${key}`,
+            matches: [`${target}/*`],
+            js: ['content.js'],
+            world: 'ISOLATED',
+            runAt: 'document_idle',
+            allFrames: false,
+            persistAcrossSessions: true,
+          },
+        ]);
+      }, origin);
+    };
+
+    const disablePersistence = async (origin: string): Promise<void> => {
+      await extensionPage.evaluate(async (target) => {
+        const key = target.replace(/[^a-zA-Z0-9]/g, '_');
+        const ids = [`reflex_page_${key}`, `reflex_content_${key}`];
+        const existing = await chrome.scripting.getRegisteredContentScripts({ ids });
+        if (existing.length) await chrome.scripting.unregisterContentScripts({ ids: existing.map((s) => s.id) });
+      }, origin);
+    };
+
+    await use({
+      attach,
+      send,
+      snapshot,
+      storedOrigins,
+      openPopup,
+      setTheme,
+      enablePersistence,
+      disablePersistence,
+      extensionId,
+    });
     await extensionPage.close();
   },
 });

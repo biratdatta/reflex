@@ -3,6 +3,7 @@ import { emptyOriginState, isAutoApprovable } from '@reflex/capability-model';
 import type { OriginState, PageSnapshot } from '@reflex/capability-model';
 import { activeTab, ensureInjected, isScannableUrl, sendToTab, type ExtensionMessage } from '../shared/messaging.js';
 import { getSettings, setSettings } from '../shared/storage.js';
+import { disablePersistence, enablePersistence, isPersistent } from '../shared/persistence.js';
 import { DEFAULT_SETTINGS, type PanelTheme, type PanelMode, type ReflexSettings } from '../shared/types.js';
 import { CandidateList, statusOf } from './CandidateList.js';
 import { CandidateDetail } from './CandidateDetail.js';
@@ -54,6 +55,8 @@ export const App = () => {
   const [statusTab, setStatusTab] = useState<'all' | 'approved' | 'rejected'>('all');
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | undefined>();
+  const [persistent, setPersistent] = useState(false);
+  const [persistenceBusy, setPersistenceBusy] = useState(false);
 
   const dispatch = useCallback(
     async (message: ExtensionMessage, options: { quiet?: boolean } = {}) => {
@@ -119,6 +122,33 @@ export const App = () => {
     void dispatch({ type: 'RESCAN' });
   }, [tabId, dispatch]);
 
+  // Whether this site re-attaches on its own; asked once the origin is known.
+  useEffect(() => {
+    const origin = snapshot?.origin;
+    if (!origin) return;
+    void isPersistent(origin).then(setPersistent);
+  }, [snapshot?.origin]);
+
+  const togglePersistent = async (next: boolean) => {
+    const origin = snapshot?.origin;
+    if (!origin) return;
+    setPersistenceBusy(true);
+    try {
+      if (next) {
+        const granted = await enablePersistence(origin);
+        setPersistent(granted);
+        if (!granted) setError('Chrome declined the permission, so Reflex will keep attaching only when you open it.');
+        else setError(undefined);
+      } else {
+        await disablePersistence(origin);
+        setPersistent(false);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+    setPersistenceBusy(false);
+  };
+
   const shown = snapshot?.candidates ?? [];
   const held = snapshot?.suppressed ?? [];
   const counts = snapshot?.counts;
@@ -163,6 +193,9 @@ export const App = () => {
         settings={settings}
         origin={snapshot?.origin ?? '—'}
         enabled={state.enabled}
+        persistent={persistent}
+        persistenceBusy={persistenceBusy}
+        onSetPersistent={(next) => void togglePersistent(next)}
         onChange={(patch) => void updateSettings(patch)}
         onSetEnabled={(enabled) => void dispatch({ type: 'SET_ORIGIN_ENABLED', enabled })}
         onDisableAll={() => void dispatch({ type: 'DISABLE_ALL_TOOLS' })}

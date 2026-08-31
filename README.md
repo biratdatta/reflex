@@ -12,7 +12,7 @@ clicking pixels.
 [![License: MIT](https://img.shields.io/badge/License-MIT-6ee7b7?style=flat-square)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](apps/extension/public/manifest.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.base.json)
-[![Tests](https://img.shields.io/badge/tests-181%20unit%20%2B%2022%20e2e-6ee7b7?style=flat-square)](#testing)
+[![Tests](https://img.shields.io/badge/tests-181%20unit%20%2B%2025%20e2e-6ee7b7?style=flat-square)](#testing)
 [![WebMCP](https://img.shields.io/badge/WebMCP-experimental-fcd34d?style=flat-square)](#webmcp-hosts)
 
 [**Download the extension**](https://github.com/biratdatta/reflex/releases/latest) ·
@@ -130,7 +130,7 @@ the text of the region the form updates — so a read-only tool returns **data**
 ### 1. Install the extension
 
 **Download:** [latest release](https://github.com/biratdatta/reflex/releases/latest) — or
-[`release/reflex-extension-0.3.0.zip`](release/reflex-extension-0.3.0.zip) from the tree (76 KB)
+[`release/reflex-extension-0.4.0.zip`](release/reflex-extension-0.4.0.zip) from the tree (76 KB)
 
 Unzip it, then:
 
@@ -360,6 +360,7 @@ end-to-end test asserts each one still renders the same eight capabilities and s
 | Panel design | Civic | Which of the five looks the panel wears |
 | Light / dark | System | Civic's two modes; the other four are single-look by design |
 | Reflex enabled here | On | Per origin. Turning it off withdraws every registered tool at once |
+| Stay attached after a reload | Off | Asks Chrome for this one site, so approved tools come back on their own |
 | Confirm destructive calls | On | Asks in the page before a destructive tool actuates, every time |
 | Rescan when the page changes | On | Keeps the list in step with what is on screen |
 | Minimum confidence | 50% | The floor before triage, which then judges forms at 50% and buttons at 70% |
@@ -586,7 +587,7 @@ what `npm run scan` does.
 | `npm run dev:demo` | Serve the demo app on port 3000 |
 | `npm run scan -- <url>` | Point the discovery engine at any live page |
 | `npm test` | 181 unit tests (jsdom) |
-| `npm run test:e2e` | 22 end-to-end tests in a real browser |
+| `npm run test:e2e` | 25 end-to-end tests in a real browser |
 | `npm run typecheck` | Typecheck every workspace |
 
 ---
@@ -605,8 +606,9 @@ what `npm run scan` does.
 - **Discovery is local.** No page content, DOM, form values or account data leaves the browser.
   Reflex has no backend, and the MVP uses no model at all — discovery is deterministic rules over
   markup.
-- **Minimal permissions:** `activeTab`, `scripting`, `storage`. No host permissions, so Reflex reads
-  a page only when you open it there.
+- **Minimal permissions by default:** `activeTab`, `scripting`, `storage`, and no host permissions —
+  Reflex reads a page only when you open it there. A site can be granted individually, from Settings,
+  to re-attach after reloads; that grant covers that one origin and is revocable from either side.
 - **One switch off.** Disabling Reflex for a site withdraws every registered tool immediately.
 
 ---
@@ -630,7 +632,7 @@ uses it and nothing else in the codebase changes.
 
 ```bash
 npm test          # 181 unit tests (jsdom)
-npm run test:e2e  # 22 tests in a real browser, against the built extension
+npm run test:e2e  # 25 tests in a real browser, against the built extension
 ```
 
 Unit tests cover naming, ARIA and label resolution, the full HTML → JSON Schema mapping, ignore rules
