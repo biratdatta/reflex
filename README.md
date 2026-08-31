@@ -9,6 +9,7 @@ accessibility metadata, proposes WebMCP tools from what it finds, and — once a
 registers those tools so an agent can drive the site through a structured interface instead of by
 clicking pixels.
 
+[![CI](https://img.shields.io/github/actions/workflow/status/biratdatta/reflex/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/biratdatta/reflex/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-6ee7b7?style=flat-square)](LICENSE)
 [![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white)](apps/extension/public/manifest.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.base.json)
@@ -593,7 +594,7 @@ promptly with `observed.navigating: true` instead of waiting for a result it cou
 | Build from source | `npm install && npm run build:extension` (Node ≥ 18.18) |
 | Demo service | `npm run dev:demo` → <http://localhost:3000/claims> |
 | WebMCP API used | `document.modelContext.registerTool({ name, description, inputSchema, execute })` — see [The WebMCP surface](#the-webmcp-surface) |
-| Tests | `npm test` (183, jsdom) · `npm run test:e2e` (25, real browser) |
+| Tests | `npm test` (183, jsdom) · `npm run test:e2e` (25, real browser) · [CI](https://github.com/biratdatta/reflex/actions/workflows/ci.yml) on every push |
 | License | [MIT](LICENSE) |
 
 ---
